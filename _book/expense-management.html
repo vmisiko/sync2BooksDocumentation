@@ -1,0 +1,707 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Expense Management · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="sync-and-monitoring.html" />
+    
+    
+    <link rel="prev" href="getting-started.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="QUICK_START.html">
+            
+                <a href="QUICK_START.html">
+            
+                    
+                    Quick Start
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="getting-started.html">
+            
+                <a href="getting-started.html">
+            
+                    
+                    Getting Started
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.4" data-path="expense-management.html">
+            
+                <a href="expense-management.html">
+            
+                    
+                    Expense Management
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="sync-and-monitoring.html">
+            
+                <a href="sync-and-monitoring.html">
+            
+                    
+                    Sync & Monitoring
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="attachments.html">
+            
+                <a href="attachments.html">
+            
+                    
+                    Attachments
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="link-integration.html">
+            
+                <a href="link-integration.html">
+            
+                    
+                    Link Integration
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.7.1" data-path="link-integration.html">
+            
+                <a href="link-integration.html#react-integration">
+            
+                    
+                    React Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7.2" data-path="link-integration.html">
+            
+                <a href="link-integration.html#vue-integration">
+            
+                    
+                    Vue Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7.3" data-path="link-integration.html">
+            
+                <a href="link-integration.html#angular-integration">
+            
+                    
+                    Angular Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7.4" data-path="link-integration.html">
+            
+                <a href="link-integration.html#svelte-integration">
+            
+                    
+                    Svelte Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="api-reference.html">
+            
+                <a href="api-reference.html">
+            
+                    
+                    API Reference
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >Expense Management</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="expense-management">Expense Management</h1>
+<p>This guide covers how to create, sync, and manage expenses in Sync2Books.</p>
+<h2 id="overview">Overview</h2>
+<p>The expense management flow consists of three main steps:</p>
+<ol>
+<li><strong>Create Expense</strong> - Submit expense data to Sync2Books</li>
+<li><strong>Automatic Sync</strong> - Sync2Books automatically syncs to the connected accounting system</li>
+<li><strong>Monitor Status</strong> - Track sync progress and handle any errors</li>
+</ol>
+<h2 id="core-flow">Core Flow</h2>
+<pre><code>&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;      &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;      &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; Your App   &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x25B6;&#x2502; Sync2Books   &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x25B6;&#x2502; Accounting      &#x2502;
+&#x2502;            &#x2502;      &#x2502; API          &#x2502;      &#x2502; System (QBO)    &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;      &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;      &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+     &#x2502;                      &#x2502;                       &#x2502;
+     &#x2502; 1. POST /expenses    &#x2502;                       &#x2502;
+     &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x25B6;&#x2502;                       &#x2502;
+     &#x2502;                      &#x2502;                       &#x2502;
+     &#x2502; 2. syncBatchId       &#x2502;                       &#x2502;
+     &#x2502;&#x25C0;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2502;                       &#x2502;
+     &#x2502;                      &#x2502;                       &#x2502;
+     &#x2502;                      &#x2502; 3. Sync to QBO         &#x2502;
+     &#x2502;                      &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x25B6;&#x2502;
+     &#x2502;                      &#x2502;                       &#x2502;
+     &#x2502; 4. GET /sync/batches &#x2502;                       &#x2502;
+     &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x25B6;&#x2502;                       &#x2502;
+     &#x2502;                      &#x2502;                       &#x2502;
+     &#x2502; 5. Status response   &#x2502;                       &#x2502;
+     &#x2502;&#x25C0;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2502;                       &#x2502;
+</code></pre><h2 id="prerequisites">Prerequisites</h2>
+<p>Before creating expenses, ensure you have:</p>
+<ul>
+<li>&#x2705; <strong>API Key</strong> - Your application&apos;s API key</li>
+<li>&#x2705; <strong>Connection ID</strong> - A connected accounting system (QuickBooks, Xero, or Sage)</li>
+<li>&#x2705; <strong>Account IDs</strong> - Valid account IDs from the accounting system</li>
+<li>&#x2705; <strong>Tax Rate IDs</strong> - Valid tax rate IDs (if applicable)</li>
+</ul>
+<h2 id="creating-an-expense">Creating an Expense</h2>
+<h3 id="endpoint">Endpoint</h3>
+<pre><code>POST /expenses/{connectionId}
+</code></pre><h3 id="request-body">Request Body</h3>
+<pre><code class="lang-json">{
+  <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;expense-001&quot;</span>,
+  <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;Payment&quot;</span>,
+  <span class="hljs-string">&quot;issueDate&quot;</span>: <span class="hljs-string">&quot;2024-01-15T00:00:00Z&quot;</span>,
+  <span class="hljs-string">&quot;currency&quot;</span>: <span class="hljs-string">&quot;USD&quot;</span>,
+  <span class="hljs-string">&quot;currencyRate&quot;</span>: <span class="hljs-number">1</span>,
+  <span class="hljs-string">&quot;merchantName&quot;</span>: <span class="hljs-string">&quot;Office Supplies Co&quot;</span>,
+  <span class="hljs-string">&quot;contactRef&quot;</span>: {
+    <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;supplier-id&quot;</span>,
+    <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;Supplier&quot;</span>
+  },
+  <span class="hljs-string">&quot;bankAccountRef&quot;</span>: {
+    <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;bank-account-id&quot;</span>
+  },
+  <span class="hljs-string">&quot;lines&quot;</span>: [
+    {
+      <span class="hljs-string">&quot;netAmount&quot;</span>: <span class="hljs-number">100.00</span>,
+      <span class="hljs-string">&quot;taxAmount&quot;</span>: <span class="hljs-number">10.00</span>,
+      <span class="hljs-string">&quot;taxRateRef&quot;</span>: {
+        <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;tax-rate-id&quot;</span>
+      },
+      <span class="hljs-string">&quot;accountRef&quot;</span>: {
+        <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;expense-account-id&quot;</span>
+      },
+      <span class="hljs-string">&quot;trackingRefs&quot;</span>: [
+        {
+          <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;tracking-category-id&quot;</span>,
+          <span class="hljs-string">&quot;dataType&quot;</span>: <span class="hljs-string">&quot;trackingCategories&quot;</span>
+        }
+      ],
+      <span class="hljs-string">&quot;invoiceTo&quot;</span>: {
+        <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;customer-id&quot;</span>,
+        <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;Customer&quot;</span>
+      }
+    }
+  ],
+  <span class="hljs-string">&quot;notes&quot;</span>: <span class="hljs-string">&quot;Office supplies for Q1 2024&quot;</span>,
+  <span class="hljs-string">&quot;postAsDraft&quot;</span>: <span class="hljs-literal">false</span>
+}
+</code></pre>
+<h3 id="field-descriptions">Field Descriptions</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Unique identifier for the expense (UUID format recommended)</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Expense type: <code>&quot;Payment&quot;</code> or <code>&quot;DirectCost&quot;</code></td>
+</tr>
+<tr>
+<td><code>issueDate</code></td>
+<td>string (ISO 8601)</td>
+<td>&#x2705;</td>
+<td>Date when the expense was incurred</td>
+</tr>
+<tr>
+<td><code>currency</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Three-letter currency code (e.g., <code>&quot;USD&quot;</code>, <code>&quot;GBP&quot;</code>)</td>
+</tr>
+<tr>
+<td><code>currencyRate</code></td>
+<td>number</td>
+<td>&#x2705;</td>
+<td>Exchange rate (usually <code>1</code> for base currency)</td>
+</tr>
+<tr>
+<td><code>merchantName</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Name of the merchant/vendor</td>
+</tr>
+<tr>
+<td><code>contactRef</code></td>
+<td>object</td>
+<td>&#x274C;</td>
+<td>Reference to a supplier/customer</td>
+</tr>
+<tr>
+<td><code>bankAccountRef</code></td>
+<td>object</td>
+<td>&#x274C;</td>
+<td>Reference to the bank account used</td>
+</tr>
+<tr>
+<td><code>lines</code></td>
+<td>array</td>
+<td>&#x2705;</td>
+<td>Array of expense line items</td>
+</tr>
+<tr>
+<td><code>notes</code></td>
+<td>string</td>
+<td>&#x274C;</td>
+<td>Additional notes about the expense</td>
+</tr>
+<tr>
+<td><code>postAsDraft</code></td>
+<td>boolean</td>
+<td>&#x274C;</td>
+<td>If <code>true</code>, creates as draft in accounting system</td>
+</tr>
+</tbody>
+</table>
+<h3 id="expense-lines">Expense Lines</h3>
+<p>Each expense line item requires:</p>
+<ul>
+<li><strong><code>netAmount</code></strong> (number, required): Net amount before tax</li>
+<li><strong><code>taxAmount</code></strong> (number, required): Tax amount</li>
+<li><strong><code>taxRateRef</code></strong> (object, required): Reference to tax rate</li>
+<li><strong><code>accountRef</code></strong> (object, required): Reference to expense account</li>
+</ul>
+<p>Optional fields:</p>
+<ul>
+<li><strong><code>trackingRefs</code></strong> (array): Tracking categories for reporting</li>
+<li><strong><code>invoiceTo</code></strong> (object): Customer to invoice (for billable expenses)</li>
+</ul>
+<h3 id="example-simple-expense">Example: Simple Expense</h3>
+<pre><code class="lang-bash">curl -X POST <span class="hljs-string">&quot;https://api.sync2books.com/v1/expenses/{connectionId}&quot;</span> \
+  -H <span class="hljs-string">&quot;X-API-Key: sk_live_your_api_key&quot;</span> \
+  -H <span class="hljs-string">&quot;Content-Type: application/json&quot;</span> \
+  <span class="hljs-_">-d</span> <span class="hljs-string">&apos;{
+    &quot;id&quot;: &quot;exp-001&quot;,
+    &quot;type&quot;: &quot;Payment&quot;,
+    &quot;issueDate&quot;: &quot;2024-01-15T00:00:00Z&quot;,
+    &quot;currency&quot;: &quot;USD&quot;,
+    &quot;currencyRate&quot;: 1,
+    &quot;merchantName&quot;: &quot;Amazon&quot;,
+    &quot;lines&quot;: [
+      {
+        &quot;netAmount&quot;: 50.00,
+        &quot;taxAmount&quot;: 5.00,
+        &quot;taxRateRef&quot;: { &quot;id&quot;: &quot;tax-10-percent&quot; },
+        &quot;accountRef&quot;: { &quot;id&quot;: &quot;office-supplies-account&quot; }
+      }
+    ]
+  }&apos;</span>
+</code></pre>
+<h3 id="example-multiple-expenses-batch">Example: Multiple Expenses (Batch)</h3>
+<p>You can create multiple expenses in a single request:</p>
+<pre><code class="lang-bash">curl -X POST <span class="hljs-string">&quot;https://api.sync2books.com/v1/expenses/{connectionId}&quot;</span> \
+  -H <span class="hljs-string">&quot;X-API-Key: sk_live_your_api_key&quot;</span> \
+  -H <span class="hljs-string">&quot;Content-Type: application/json&quot;</span> \
+  <span class="hljs-_">-d</span> <span class="hljs-string">&apos;[
+    {
+      &quot;id&quot;: &quot;exp-001&quot;,
+      &quot;type&quot;: &quot;Payment&quot;,
+      &quot;issueDate&quot;: &quot;2024-01-15T00:00:00Z&quot;,
+      &quot;currency&quot;: &quot;USD&quot;,
+      &quot;currencyRate&quot;: 1,
+      &quot;merchantName&quot;: &quot;Amazon&quot;,
+      &quot;lines&quot;: [...]
+    },
+    {
+      &quot;id&quot;: &quot;exp-002&quot;,
+      &quot;type&quot;: &quot;Payment&quot;,
+      &quot;issueDate&quot;: &quot;2024-01-16T00:00:00Z&quot;,
+      &quot;currency&quot;: &quot;USD&quot;,
+      &quot;currencyRate&quot;: 1,
+      &quot;merchantName&quot;: &quot;Staples&quot;,
+      &quot;lines&quot;: [...]
+    }
+  ]&apos;</span>
+</code></pre>
+<h3 id="response">Response</h3>
+<pre><code class="lang-json">{
+  <span class="hljs-string">&quot;syncBatchId&quot;</span>: <span class="hljs-string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>,
+  <span class="hljs-string">&quot;totalExpenses&quot;</span>: <span class="hljs-number">1</span>
+}
+</code></pre>
+<p>The <code>syncBatchId</code> is used to track the sync status.</p>
+<h2 id="data-model">Data Model</h2>
+<h3 id="expense-entity">Expense Entity</h3>
+<pre><code class="lang-typescript">{
+  id: <span class="hljs-built_in">string</span>;                    <span class="hljs-comment">// Unique identifier</span>
+  <span class="hljs-keyword">type</span>: <span class="hljs-string">&quot;Payment&quot;</span> | <span class="hljs-string">&quot;DirectCost&quot;</span>;
+  issueDate: <span class="hljs-built_in">string</span>;              <span class="hljs-comment">// ISO 8601 date</span>
+  currency: <span class="hljs-built_in">string</span>;               <span class="hljs-comment">// Currency code</span>
+  currencyRate: <span class="hljs-built_in">number</span>;
+  merchantName: <span class="hljs-built_in">string</span>;
+  contactRef?: {
+    id: <span class="hljs-built_in">string</span>;
+    <span class="hljs-keyword">type</span>: <span class="hljs-string">&quot;Supplier&quot;</span> | <span class="hljs-string">&quot;Customer&quot;</span>;
+  };
+  bankAccountRef?: {
+    id: <span class="hljs-built_in">string</span>;
+  };
+  lines: ExpenseLine[];
+  notes?: <span class="hljs-built_in">string</span>;
+  postAsDraft?: <span class="hljs-built_in">boolean</span>;
+}
+</code></pre>
+<h3 id="expense-line">Expense Line</h3>
+<pre><code class="lang-typescript">{
+  netAmount: <span class="hljs-built_in">number</span>;
+  taxAmount: <span class="hljs-built_in">number</span>;
+  taxRateRef: {
+    id: <span class="hljs-built_in">string</span>;
+  };
+  accountRef: {
+    id: <span class="hljs-built_in">string</span>;
+  };
+  trackingRefs?: <span class="hljs-built_in">Array</span>&lt;{
+    id: <span class="hljs-built_in">string</span>;
+    dataType: <span class="hljs-string">&quot;trackingCategories&quot;</span>;
+  }&gt;;
+  invoiceTo?: {
+    id: <span class="hljs-built_in">string</span>;
+    <span class="hljs-keyword">type</span>: <span class="hljs-string">&quot;Customer&quot;</span>;
+  };
+}
+</code></pre>
+<h2 id="getting-account-and-tax-rate-ids">Getting Account and Tax Rate IDs</h2>
+<p>Before creating expenses, you need valid IDs from your accounting system:</p>
+<h3 id="quickbooks-online">QuickBooks Online</h3>
+<ol>
+<li><p>Use the QuickBooks API or UI to find:</p>
+<ul>
+<li><strong>Account ID</strong>: Chart of Accounts &#x2192; Account &#x2192; ID</li>
+<li><strong>Tax Rate ID</strong>: Tax Rates &#x2192; Tax Rate &#x2192; ID</li>
+<li><strong>Supplier ID</strong>: Vendors &#x2192; Supplier &#x2192; ID</li>
+<li><strong>Customer ID</strong>: Customers &#x2192; Customer &#x2192; ID</li>
+</ul>
+</li>
+<li><p>Or use Sync2Books reference endpoints (coming soon)</p>
+</li>
+</ol>
+<h3 id="xero">Xero</h3>
+<p>Similar process using Xero&apos;s API or UI.</p>
+<h2 id="tracking-sync-status">Tracking Sync Status</h2>
+<p>After creating an expense, use the <code>syncBatchId</code> to monitor progress:</p>
+<pre><code class="lang-bash">curl -X GET <span class="hljs-string">&quot;https://api.sync2books.com/v1/sync/batches/{syncBatchId}&quot;</span> \
+  -H <span class="hljs-string">&quot;X-API-Key: sk_live_your_api_key&quot;</span>
+</code></pre>
+<p>See <a href="sync-and-monitoring.html">Sync &amp; Monitoring</a> for detailed status tracking.</p>
+<h2 id="querying-expenses">Querying Expenses</h2>
+<h3 id="get-a-single-expense">Get a Single Expense</h3>
+<pre><code class="lang-bash">curl -X GET <span class="hljs-string">&quot;https://api.sync2books.com/v1/expenses/{expenseId}&quot;</span> \
+  -H <span class="hljs-string">&quot;X-API-Key: sk_live_your_api_key&quot;</span>
+</code></pre>
+<h3 id="get-expenses-by-connection">Get Expenses by Connection</h3>
+<pre><code class="lang-bash">curl -X GET <span class="hljs-string">&quot;https://api.sync2books.com/v1/expenses/connection/{connectionId}&quot;</span> \
+  -H <span class="hljs-string">&quot;X-API-Key: sk_live_your_api_key&quot;</span>
+</code></pre>
+<h2 id="error-handling">Error Handling</h2>
+<h3 id="validation-errors">Validation Errors</h3>
+<p>If required fields are missing or invalid:</p>
+<pre><code class="lang-json">{
+  <span class="hljs-string">&quot;statusCode&quot;</span>: <span class="hljs-number">400</span>,
+  <span class="hljs-string">&quot;message&quot;</span>: [<span class="hljs-string">&quot;id should not be empty&quot;</span>, <span class="hljs-string">&quot;currency must be a string&quot;</span>],
+  <span class="hljs-string">&quot;error&quot;</span>: <span class="hljs-string">&quot;Bad Request&quot;</span>
+}
+</code></pre>
+<h3 id="sync-errors">Sync Errors</h3>
+<p>If the sync fails, check the sync batch status for error details. See <a href="sync-and-monitoring.html">Sync &amp; Monitoring</a> for error handling.</p>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Use UUIDs for expense IDs</strong> - Ensures uniqueness across your system</li>
+<li><strong>Batch multiple expenses</strong> - More efficient than individual requests</li>
+<li><strong>Poll sync status</strong> - Check every 2-3 seconds until complete</li>
+<li><strong>Handle errors gracefully</strong> - Implement retry logic for transient failures</li>
+<li><strong>Validate data before sending</strong> - Ensure all required fields are present</li>
+</ol>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong><a href="sync-and-monitoring.html">Sync &amp; Monitoring</a></strong> - Learn how to track sync status</li>
+<li><strong><a href="attachments.html">Attachments</a></strong> - Upload files to expenses</li>
+<li><strong><a href="link-integration.html">Link Integration</a></strong> - Connect accounting systems</li>
+</ul>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="getting-started.html" class="navigation navigation-prev " aria-label="Previous page: Getting Started">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="sync-and-monitoring.html" class="navigation navigation-next " aria-label="Next page: Sync & Monitoring">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Expense Management","level":"1.4","depth":1,"next":{"title":"Sync & Monitoring","level":"1.5","depth":1,"path":"sync-and-monitoring.md","ref":"sync-and-monitoring.md","articles":[]},"previous":{"title":"Getting Started","level":"1.3","depth":1,"path":"getting-started.md","ref":"getting-started.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"expense-management.md","mtime":"2026-01-16T07:29:46.536Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2026-01-18T20:36:41.198Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

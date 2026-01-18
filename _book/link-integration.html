@@ -1,0 +1,894 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Link Integration · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="link-integration.html" />
+    
+    
+    <link rel="prev" href="attachments.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="QUICK_START.html">
+            
+                <a href="QUICK_START.html">
+            
+                    
+                    Quick Start
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="getting-started.html">
+            
+                <a href="getting-started.html">
+            
+                    
+                    Getting Started
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="expense-management.html">
+            
+                <a href="expense-management.html">
+            
+                    
+                    Expense Management
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="sync-and-monitoring.html">
+            
+                <a href="sync-and-monitoring.html">
+            
+                    
+                    Sync & Monitoring
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="attachments.html">
+            
+                <a href="attachments.html">
+            
+                    
+                    Attachments
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.7" data-path="link-integration.html">
+            
+                <a href="link-integration.html">
+            
+                    
+                    Link Integration
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.7.1" data-path="link-integration.html">
+            
+                <a href="link-integration.html#react-integration">
+            
+                    
+                    React Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7.2" data-path="link-integration.html">
+            
+                <a href="link-integration.html#vue-integration">
+            
+                    
+                    Vue Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7.3" data-path="link-integration.html">
+            
+                <a href="link-integration.html#angular-integration">
+            
+                    
+                    Angular Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7.4" data-path="link-integration.html">
+            
+                <a href="link-integration.html#svelte-integration">
+            
+                    
+                    Svelte Integration
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="api-reference.html">
+            
+                <a href="api-reference.html">
+            
+                    
+                    API Reference
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >Link Integration</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="link-integration">Link Integration</h1>
+<p>Integrate the Sync2Books Link component to connect accounting systems (QuickBooks, Xero, Sage) in your application.</p>
+<h2 id="overview">Overview</h2>
+<p>The Sync2Books Link is a pre-built UI component that handles the OAuth flow for connecting accounting systems. It provides:</p>
+<ul>
+<li>&#x2705; <strong>Pre-built UI</strong> - No need to build OAuth flows yourself</li>
+<li>&#x2705; <strong>Multi-framework support</strong> - React, Vue, Angular, Svelte</li>
+<li>&#x2705; <strong>Customizable branding</strong> - Use your app&apos;s logo and name</li>
+<li>&#x2705; <strong>Automatic token management</strong> - Handles refresh and expiration</li>
+</ul>
+<h2 id="how-link-works">How Link Works</h2>
+<pre><code>&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; Your App    &#x2502;
+&#x2502;             &#x2502;
+&#x2502; [Connect    &#x2502;
+&#x2502;  QuickBooks]&#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+       &#x2502;
+       &#x2502; 1. User clicks &quot;Connect&quot;
+       &#x25BC;
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; Sync2Books Link     &#x2502;
+&#x2502; Modal/Dialog        &#x2502;
+&#x2502;                     &#x2502;
+&#x2502; Select Integration  &#x2502;
+&#x2502; [QuickBooks] [Xero] &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+       &#x2502;
+       &#x2502; 2. User selects QuickBooks
+       &#x25BC;
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; OAuth Consent       &#x2502;
+&#x2502; (Opens in new tab)  &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+       &#x2502;
+       &#x2502; 3. User authorizes
+       &#x25BC;
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; Connection Success &#x2502;
+&#x2502; Returns connectionId&#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+</code></pre><h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>&#x2705; <strong>API Key</strong> - Your application&apos;s API key</li>
+<li>&#x2705; <strong>Application ID</strong> - Your application ID</li>
+<li>&#x2705; <strong>Company ID</strong> - The company/user ID in your system</li>
+<li>&#x2705; <strong>Redirect URIs</strong> - Configured in your application settings</li>
+</ul>
+<h2 id="react-integration">React Integration</h2>
+<h3 id="installation">Installation</h3>
+<pre><code class="lang-bash">npm install @sync2books/react
+<span class="hljs-comment"># or</span>
+yarn add @sync2books/react
+</code></pre>
+<h3 id="basic-usage">Basic Usage</h3>
+<pre><code class="lang-tsx">import { useSync2Books } from &apos;@sync2books/react&apos;;
+
+function MyComponent() {
+  const { openLink, isReady } = useSync2Books({
+    companyId: &apos;your-company-id&apos;,
+    applicationId: &apos;your-application-id&apos;,
+    applicationName: &apos;Your App Name&apos;,
+    apiKey: &apos;sk_live_your_api_key&apos;,
+    integrationKey: &apos;quickbooks&apos;,
+    onSuccess: (payload) =&gt; {
+      console.log(&apos;Connected!&apos;, payload);
+      // payload: { connectionId: &apos;...&apos;, integrationKey: &apos;quickbooks&apos; }
+    },
+    onError: (error) =&gt; {
+      console.error(&apos;Connection failed:&apos;, error);
+    },
+  });
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={() =&gt; openLink()} disabled={!isReady}&gt;
+        Connect QuickBooks
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h3 id="advanced-usage">Advanced Usage</h3>
+<pre><code class="lang-tsx">import { useSync2Books } from &apos;@sync2books/react&apos;;
+
+function MyComponent() {
+  const { openLink, isReady } = useSync2Books({
+    companyId: &apos;your-company-id&apos;,
+    applicationId: &apos;your-application-id&apos;,
+    applicationName: &apos;Your App Name&apos;,
+    apiKey: &apos;sk_live_your_api_key&apos;,
+    integrationKey: &apos;quickbooks&apos;,
+    embedBaseUrl: &apos;https://app.sync2books.com&apos;, // Optional: custom embed URL
+    integrations: [
+      { key: &apos;quickbooks&apos;, label: &apos;QuickBooks Online&apos;, enabled: true },
+      { key: &apos;xero&apos;, label: &apos;Xero&apos;, enabled: false }, // Disabled
+    ],
+    onReady: () =&gt; {
+      console.log(&apos;Link is ready&apos;);
+    },
+    onConnection: ({ connectionId, integrationKey }) =&gt; {
+      console.log(&apos;Connection established:&apos;, connectionId, integrationKey);
+    },
+    onSuccess: (payload) =&gt; {
+      console.log(&apos;Success:&apos;, payload);
+    },
+    onLinkError: ({ message, userRecoverable }) =&gt; {
+      if (userRecoverable) {
+        // Show retry button
+      } else {
+        // Show error message
+      }
+    },
+    onError: (error) =&gt; {
+      console.error(&apos;Error:&apos;, error);
+    },
+  });
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={() =&gt; openLink({ integrationKey: &apos;xero&apos; })}&gt;
+        Connect Xero
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h3 id="api-reference">API Reference</h3>
+<h4 id="usesync2booksconfig"><code>useSync2Books(config)</code></h4>
+<p><strong>Config Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>companyId</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Your company/user ID</td>
+</tr>
+<tr>
+<td><code>applicationId</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Your application ID</td>
+</tr>
+<tr>
+<td><code>applicationName</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Your application name (shown in OAuth consent)</td>
+</tr>
+<tr>
+<td><code>apiKey</code></td>
+<td>string</td>
+<td>&#x2705;</td>
+<td>Your API key</td>
+</tr>
+<tr>
+<td><code>integrationKey</code></td>
+<td>`&apos;quickbooks&apos; \</td>
+<td>&apos;xero&apos; \</td>
+<td>&apos;sage&apos;`</td>
+<td>&#x2705;</td>
+<td>Default integration</td>
+</tr>
+<tr>
+<td><code>embedBaseUrl</code></td>
+<td>string</td>
+<td>&#x274C;</td>
+<td>Custom embed URL (defaults to <code>window.location.origin</code>)</td>
+</tr>
+<tr>
+<td><code>integrations</code></td>
+<td>array</td>
+<td>&#x274C;</td>
+<td>Custom integration list with enabled flags</td>
+</tr>
+<tr>
+<td><code>onReady</code></td>
+<td>function</td>
+<td>&#x274C;</td>
+<td>Called when Link is ready</td>
+</tr>
+<tr>
+<td><code>onConnection</code></td>
+<td>function</td>
+<td>&#x274C;</td>
+<td>Called when connection is established</td>
+</tr>
+<tr>
+<td><code>onSuccess</code></td>
+<td>function</td>
+<td>&#x274C;</td>
+<td>Called on successful connection</td>
+</tr>
+<tr>
+<td><code>onLinkError</code></td>
+<td>function</td>
+<td>&#x274C;</td>
+<td>Called on connection error</td>
+</tr>
+<tr>
+<td><code>onError</code></td>
+<td>function</td>
+<td>&#x274C;</td>
+<td>Called on any error</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>openLink(args?)</code> - Function to open the Link modal</li>
+<li><code>isReady</code> - Boolean indicating if Link is ready</li>
+<li><code>isInitiated</code> - Boolean indicating if Link has been initialized</li>
+</ul>
+<h2 id="vue-integration">Vue Integration</h2>
+<h3 id="installation">Installation</h3>
+<pre><code class="lang-bash">npm install @sync2books/vue
+<span class="hljs-comment"># or</span>
+yarn add @sync2books/vue
+</code></pre>
+<h3 id="basic-usage">Basic Usage</h3>
+<pre><code class="lang-vue">&lt;template&gt;
+  &lt;div&gt;
+    &lt;button @click=&quot;handleConnect&quot; :disabled=&quot;!isReady&quot;&gt;
+      Connect QuickBooks
+    &lt;/button&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { useSync2Books } from &apos;@sync2books/vue&apos;;
+
+const { openLink, isReady } = useSync2Books({
+  companyId: &apos;your-company-id&apos;,
+  applicationId: &apos;your-application-id&apos;,
+  applicationName: &apos;Your App Name&apos;,
+  apiKey: &apos;sk_live_your_api_key&apos;,
+  integrationKey: &apos;quickbooks&apos;,
+  onSuccess: (payload) =&gt; {
+    console.log(&apos;Connected!&apos;, payload);
+  },
+  onError: (error) =&gt; {
+    console.error(&apos;Connection failed:&apos;, error);
+  },
+});
+
+function handleConnect() {
+  openLink();
+}
+&lt;/script&gt;
+</code></pre>
+<h3 id="advanced-usage">Advanced Usage</h3>
+<pre><code class="lang-vue">&lt;template&gt;
+  &lt;div&gt;
+    &lt;button @click=&quot;connectQuickBooks&quot;&gt;Connect QuickBooks&lt;/button&gt;
+    &lt;button @click=&quot;connectXero&quot;&gt;Connect Xero&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref } from &apos;vue&apos;;
+import { useSync2Books } from &apos;@sync2books/vue&apos;;
+
+const connectionId = ref(null);
+
+const { openLink, isReady } = useSync2Books({
+  companyId: &apos;your-company-id&apos;,
+  applicationId: &apos;your-application-id&apos;,
+  applicationName: &apos;Your App Name&apos;,
+  apiKey: &apos;sk_live_your_api_key&apos;,
+  integrationKey: &apos;quickbooks&apos;,
+  integrations: [
+    { key: &apos;quickbooks&apos;, label: &apos;QuickBooks Online&apos;, enabled: true },
+    { key: &apos;xero&apos;, label: &apos;Xero&apos;, enabled: true },
+  ],
+  onConnection: ({ connectionId: id, integrationKey }) =&gt; {
+    connectionId.value = id;
+    console.log(&apos;Connected to&apos;, integrationKey);
+  },
+  onLinkError: ({ message, userRecoverable }) =&gt; {
+    if (userRecoverable) {
+      // Show retry option
+    } else {
+      alert(message);
+    }
+  },
+});
+
+function connectQuickBooks() {
+  openLink({ integrationKey: &apos;quickbooks&apos; });
+}
+
+function connectXero() {
+  openLink({ integrationKey: &apos;xero&apos; });
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="angular-integration">Angular Integration</h2>
+<h3 id="installation">Installation</h3>
+<pre><code class="lang-bash">npm install @sync2books/angular
+</code></pre>
+<h3 id="basic-usage">Basic Usage</h3>
+<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { Component } from <span class="hljs-string">&apos;@angular/core&apos;</span>;
+<span class="hljs-keyword">import</span> { useSync2Books } from <span class="hljs-string">&apos;@sync2books/angular&apos;</span>;
+
+@Component({
+  selector: <span class="hljs-string">&apos;app-connect&apos;</span>,
+  template: <span class="hljs-string">`
+    &lt;button (click)=&quot;connect()&quot; [disabled]=&quot;!isReady&quot;&gt;
+      Connect QuickBooks
+    &lt;/button&gt;
+  `</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> ConnectComponent {
+  <span class="hljs-keyword">private</span> link = useSync2Books({
+    companyId: <span class="hljs-string">&apos;your-company-id&apos;</span>,
+    applicationId: <span class="hljs-string">&apos;your-application-id&apos;</span>,
+    applicationName: <span class="hljs-string">&apos;Your App Name&apos;</span>,
+    apiKey: <span class="hljs-string">&apos;sk_live_your_api_key&apos;</span>,
+    integrationKey: <span class="hljs-string">&apos;quickbooks&apos;</span>,
+    onSuccess: (payload) =&gt; {
+      <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;Connected!&apos;</span>, payload);
+    },
+    onError: (error) =&gt; {
+      <span class="hljs-built_in">console</span>.error(<span class="hljs-string">&apos;Connection failed:&apos;</span>, error);
+    },
+  });
+
+  <span class="hljs-keyword">get</span> isReady() {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.link.isReady;
+  }
+
+  connect() {
+    <span class="hljs-keyword">this</span>.link.openLink();
+  }
+}
+</code></pre>
+<h2 id="svelte-integration">Svelte Integration</h2>
+<h3 id="installation">Installation</h3>
+<pre><code class="lang-bash">npm install @sync2books/svelte
+</code></pre>
+<h3 id="basic-usage">Basic Usage</h3>
+<pre><code class="lang-svelte">&lt;script&gt;
+  import { useSync2Books } from &apos;@sync2books/svelte&apos;;
+
+  const { openLink, isReady } = useSync2Books({
+    companyId: &apos;your-company-id&apos;,
+    applicationId: &apos;your-application-id&apos;,
+    applicationName: &apos;Your App Name&apos;,
+    apiKey: &apos;sk_live_your_api_key&apos;,
+    integrationKey: &apos;quickbooks&apos;,
+    onSuccess: (payload) =&gt; {
+      console.log(&apos;Connected!&apos;, payload);
+    },
+    onError: (error) =&gt; {
+      console.error(&apos;Connection failed:&apos;, error);
+    },
+  });
+&lt;/script&gt;
+
+&lt;button on:click={() =&gt; openLink()} disabled={!isReady}&gt;
+  Connect QuickBooks
+&lt;/button&gt;
+</code></pre>
+<h2 id="customization">Customization</h2>
+<h3 id="application-settings">Application Settings</h3>
+<p>Configure your application&apos;s Link appearance in the dashboard:</p>
+<ol>
+<li>Go to <strong>Applications</strong> &#x2192; <strong>Settings</strong></li>
+<li>Set <strong>Link Logo URL</strong> - Your app&apos;s logo (shown in OAuth consent)</li>
+<li>Set <strong>Link Display Name</strong> - Your app&apos;s name (shown in OAuth consent)</li>
+<li>Add <strong>Redirect URIs</strong> - URLs where users are redirected after OAuth</li>
+</ol>
+<h3 id="redirect-uris">Redirect URIs</h3>
+<p>Redirect URIs must be configured in your application settings. Examples:</p>
+<ul>
+<li><code>http://localhost:3000/callback</code></li>
+<li><code>https://app.example.com/callback</code></li>
+<li><code>https://app.example.com/application/{applicationId}/connect</code></li>
+</ul>
+<p>After successful OAuth, users are redirected to the first matching URI from your configured list.</p>
+<h2 id="error-handling">Error Handling</h2>
+<h3 id="user-recoverable-errors">User Recoverable Errors</h3>
+<p>Some errors allow users to retry:</p>
+<pre><code class="lang-typescript">onLinkError: ({ message, userRecoverable }) =&gt; {
+  <span class="hljs-keyword">if</span> (userRecoverable) {
+    <span class="hljs-comment">// Show retry button</span>
+    setShowRetry(<span class="hljs-literal">true</span>);
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-comment">// Show error message</span>
+    setErrorMessage(message);
+  }
+}
+</code></pre>
+<h3 id="common-errors">Common Errors</h3>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>No auth strategy provided</code></td>
+<td>Missing <code>apiKey</code> or <code>getAuthUrl</code></td>
+<td>Provide API key</td>
+</tr>
+<tr>
+<td><code>Connection failed</code></td>
+<td>OAuth authorization failed</td>
+<td>User needs to retry</td>
+</tr>
+<tr>
+<td><code>Connection expired</code></td>
+<td>OAuth token expired</td>
+<td>Reconnect the integration</td>
+</tr>
+</tbody>
+</table>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Show loading state</strong> - Disable buttons until <code>isReady</code> is <code>true</code></li>
+<li><strong>Handle errors gracefully</strong> - Show user-friendly error messages</li>
+<li><strong>Store connection ID</strong> - Save <code>connectionId</code> after successful connection</li>
+<li><strong>Test redirect URIs</strong> - Ensure redirect URIs are correctly configured</li>
+<li><strong>Use production API keys</strong> - Use <code>sk_live_...</code> keys in production</li>
+</ol>
+<h2 id="link-ui-preview">Link UI Preview</h2>
+<p>The Link component shows a modal/dialog with the following steps:</p>
+<h3 id="step-1-integration-selection">Step 1: Integration Selection</h3>
+<p>The user sees a searchable list of available integrations:</p>
+<pre><code>&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;  Connect to Accounting System       &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  [Search integrations...]            &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;
+&#x2502;  &#x2502; &#x1F9FE; QuickBooks Online         &#x2502;  &#x2502;
+&#x2502;  &#x2502;    Intuit                    &#x2502;  &#x2502;
+&#x2502;  &#x2502;    [Connect]                 &#x2502;  &#x2502;
+&#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;
+&#x2502;  &#x2502; &#x1F4CA; Xero                      &#x2502;  &#x2502;
+&#x2502;  &#x2502;    Xero                     &#x2502;  &#x2502;
+&#x2502;  &#x2502;    [Connect] (Coming Soon)  &#x2502;  &#x2502;
+&#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;
+&#x2502;  &#x2502; &#x1F4C8; Sage                      &#x2502;  &#x2502;
+&#x2502;  &#x2502;    Sage                     &#x2502;  &#x2502;
+&#x2502;  &#x2502;    [Connect] (Coming Soon)  &#x2502;  &#x2502;
+&#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+</code></pre><h3 id="step-2-oauth-consent">Step 2: OAuth Consent</h3>
+<p>After selecting an integration, a new tab/window opens with the accounting system&apos;s OAuth consent page (e.g., QuickBooks). The modal shows:</p>
+<pre><code>&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;  &#x23F3; Waiting for QuickBooks          &#x2502;
+&#x2502;     connection...                  &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  &#x1F535; [Spinner]                      &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  Enter your account details and     &#x2502;
+&#x2502;  log in to QuickBooks in the tab   &#x2502;
+&#x2502;  we opened to establish a data      &#x2502;
+&#x2502;  connection with Your App Name.     &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;
+&#x2502;  &#x2502; QuickBooks didn&apos;t open?      &#x2502;  &#x2502;
+&#x2502;  &#x2502; [Open QuickBooks]            &#x2502;  &#x2502;
+&#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+</code></pre><h3 id="step-3-success">Step 3: Success</h3>
+<p>After successful OAuth, the modal shows:</p>
+<pre><code>&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;  &#x2705; Connection created successfully &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  Your App Name is now connected to   &#x2502;
+&#x2502;  QuickBooks Online.                 &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;
+&#x2502;  &#x2502; What&apos;s next?                 &#x2502;  &#x2502;
+&#x2502;  &#x2502; You can now configure        &#x2502;  &#x2502;
+&#x2502;  &#x2502; mappings and start syncing    &#x2502;  &#x2502;
+&#x2502;  &#x2502; data.                         &#x2502;  &#x2502;
+&#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;
+&#x2502;                                      &#x2502;
+&#x2502;  [Complete]                          &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+</code></pre><h3 id="customization">Customization</h3>
+<p>The Link component can be customized via your application settings:</p>
+<ul>
+<li><strong>Logo</strong> - Set <code>linkLogoUrl</code> to show your app&apos;s logo in the OAuth consent screen</li>
+<li><strong>Display Name</strong> - Set <code>linkDisplayName</code> to show your app&apos;s name (e.g., &quot;Your App Name&quot;)</li>
+<li><strong>Redirect URIs</strong> - Configure where users are redirected after OAuth completes</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong><a href="getting-started.html">Getting Started</a></strong> - Set up your API key</li>
+<li><strong><a href="expense-management.html">Expense Management</a></strong> - Create and sync expenses</li>
+<li><strong><a href="sync-and-monitoring.html">Sync &amp; Monitoring</a></strong> - Track sync status</li>
+</ul>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="attachments.html" class="navigation navigation-prev " aria-label="Previous page: Attachments">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="link-integration.html#react-integration" class="navigation navigation-next " aria-label="Next page: React Integration">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Link Integration","level":"1.7","depth":1,"next":{"title":"React Integration","level":"1.7.1","depth":2,"anchor":"#react-integration","path":"link-integration.md","ref":"link-integration.md#react-integration","articles":[]},"previous":{"title":"Attachments","level":"1.6","depth":1,"path":"attachments.md","ref":"attachments.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"link-integration.md","mtime":"2026-01-16T07:29:46.536Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2026-01-18T20:36:41.198Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

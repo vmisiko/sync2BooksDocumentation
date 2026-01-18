@@ -1,0 +1,492 @@
+# Link Integration
+
+Integrate the Sync2Books Link component to connect accounting systems (QuickBooks, Xero, Sage) in your application.
+
+## Overview
+
+The Sync2Books Link is a pre-built UI component that handles the OAuth flow for connecting accounting systems. It provides:
+
+- ✅ **Pre-built UI** - No need to build OAuth flows yourself
+- ✅ **Multi-framework support** - React, Vue, Angular, Svelte
+- ✅ **Customizable branding** - Use your app's logo and name
+- ✅ **Automatic token management** - Handles refresh and expiration
+
+## How Link Works
+
+```
+┌─────────────┐
+│ Your App    │
+│             │
+│ [Connect    │
+│  QuickBooks]│
+└──────┬──────┘
+       │
+       │ 1. User clicks "Connect"
+       ▼
+┌─────────────────────┐
+│ Sync2Books Link     │
+│ Modal/Dialog        │
+│                     │
+│ Select Integration  │
+│ [QuickBooks] [Xero] │
+└──────┬──────────────┘
+       │
+       │ 2. User selects QuickBooks
+       ▼
+┌─────────────────────┐
+│ OAuth Consent       │
+│ (Opens in new tab)  │
+└──────┬──────────────┘
+       │
+       │ 3. User authorizes
+       ▼
+┌─────────────────────┐
+│ Connection Success │
+│ Returns connectionId│
+└─────────────────────┘
+```
+
+## Prerequisites
+
+- ✅ **API Key** - Your application's API key
+- ✅ **Application ID** - Your application ID
+- ✅ **Company ID** - The company/user ID in your system
+- ✅ **Redirect URIs** - Configured in your application settings
+
+## React Integration
+
+### Installation
+
+```bash
+npm install @sync2books/react
+# or
+yarn add @sync2books/react
+```
+
+### Basic Usage
+
+```tsx
+import { useSync2Books } from '@sync2books/react';
+
+function MyComponent() {
+  const { openLink, isReady } = useSync2Books({
+    companyId: 'your-company-id',
+    applicationId: 'your-application-id',
+    applicationName: 'Your App Name',
+    apiKey: 'sk_live_your_api_key',
+    integrationKey: 'quickbooks',
+    onSuccess: (payload) => {
+      console.log('Connected!', payload);
+      // payload: { connectionId: '...', integrationKey: 'quickbooks' }
+    },
+    onError: (error) => {
+      console.error('Connection failed:', error);
+    },
+  });
+
+  return (
+    <div>
+      <button onClick={() => openLink()} disabled={!isReady}>
+        Connect QuickBooks
+      </button>
+    </div>
+  );
+}
+```
+
+### Advanced Usage
+
+```tsx
+import { useSync2Books } from '@sync2books/react';
+
+function MyComponent() {
+  const { openLink, isReady } = useSync2Books({
+    companyId: 'your-company-id',
+    applicationId: 'your-application-id',
+    applicationName: 'Your App Name',
+    apiKey: 'sk_live_your_api_key',
+    integrationKey: 'quickbooks',
+    embedBaseUrl: 'https://app.sync2books.com', // Optional: custom embed URL
+    integrations: [
+      { key: 'quickbooks', label: 'QuickBooks Online', enabled: true },
+      { key: 'xero', label: 'Xero', enabled: false }, // Disabled
+    ],
+    onReady: () => {
+      console.log('Link is ready');
+    },
+    onConnection: ({ connectionId, integrationKey }) => {
+      console.log('Connection established:', connectionId, integrationKey);
+    },
+    onSuccess: (payload) => {
+      console.log('Success:', payload);
+    },
+    onLinkError: ({ message, userRecoverable }) => {
+      if (userRecoverable) {
+        // Show retry button
+      } else {
+        // Show error message
+      }
+    },
+    onError: (error) => {
+      console.error('Error:', error);
+    },
+  });
+
+  return (
+    <div>
+      <button onClick={() => openLink({ integrationKey: 'xero' })}>
+        Connect Xero
+      </button>
+    </div>
+  );
+}
+```
+
+### API Reference
+
+#### `useSync2Books(config)`
+
+**Config Options:**
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `companyId` | string | ✅ | Your company/user ID |
+| `applicationId` | string | ✅ | Your application ID |
+| `applicationName` | string | ✅ | Your application name (shown in OAuth consent) |
+| `apiKey` | string | ✅ | Your API key |
+| `integrationKey` | `'quickbooks' \| 'xero' \| 'sage'` | ✅ | Default integration |
+| `embedBaseUrl` | string | ❌ | Custom embed URL (defaults to `window.location.origin`) |
+| `integrations` | array | ❌ | Custom integration list with enabled flags |
+| `onReady` | function | ❌ | Called when Link is ready |
+| `onConnection` | function | ❌ | Called when connection is established |
+| `onSuccess` | function | ❌ | Called on successful connection |
+| `onLinkError` | function | ❌ | Called on connection error |
+| `onError` | function | ❌ | Called on any error |
+
+**Returns:**
+
+- `openLink(args?)` - Function to open the Link modal
+- `isReady` - Boolean indicating if Link is ready
+- `isInitiated` - Boolean indicating if Link has been initialized
+
+## Vue Integration
+
+### Installation
+
+```bash
+npm install @sync2books/vue
+# or
+yarn add @sync2books/vue
+```
+
+### Basic Usage
+
+```vue
+<template>
+  <div>
+    <button @click="handleConnect" :disabled="!isReady">
+      Connect QuickBooks
+    </button>
+  </div>
+</template>
+
+<script setup>
+import { useSync2Books } from '@sync2books/vue';
+
+const { openLink, isReady } = useSync2Books({
+  companyId: 'your-company-id',
+  applicationId: 'your-application-id',
+  applicationName: 'Your App Name',
+  apiKey: 'sk_live_your_api_key',
+  integrationKey: 'quickbooks',
+  onSuccess: (payload) => {
+    console.log('Connected!', payload);
+  },
+  onError: (error) => {
+    console.error('Connection failed:', error);
+  },
+});
+
+function handleConnect() {
+  openLink();
+}
+</script>
+```
+
+### Advanced Usage
+
+```vue
+<template>
+  <div>
+    <button @click="connectQuickBooks">Connect QuickBooks</button>
+    <button @click="connectXero">Connect Xero</button>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { useSync2Books } from '@sync2books/vue';
+
+const connectionId = ref(null);
+
+const { openLink, isReady } = useSync2Books({
+  companyId: 'your-company-id',
+  applicationId: 'your-application-id',
+  applicationName: 'Your App Name',
+  apiKey: 'sk_live_your_api_key',
+  integrationKey: 'quickbooks',
+  integrations: [
+    { key: 'quickbooks', label: 'QuickBooks Online', enabled: true },
+    { key: 'xero', label: 'Xero', enabled: true },
+  ],
+  onConnection: ({ connectionId: id, integrationKey }) => {
+    connectionId.value = id;
+    console.log('Connected to', integrationKey);
+  },
+  onLinkError: ({ message, userRecoverable }) => {
+    if (userRecoverable) {
+      // Show retry option
+    } else {
+      alert(message);
+    }
+  },
+});
+
+function connectQuickBooks() {
+  openLink({ integrationKey: 'quickbooks' });
+}
+
+function connectXero() {
+  openLink({ integrationKey: 'xero' });
+}
+</script>
+```
+
+## Angular Integration
+
+### Installation
+
+```bash
+npm install @sync2books/angular
+```
+
+### Basic Usage
+
+```typescript
+import { Component } from '@angular/core';
+import { useSync2Books } from '@sync2books/angular';
+
+@Component({
+  selector: 'app-connect',
+  template: `
+    <button (click)="connect()" [disabled]="!isReady">
+      Connect QuickBooks
+    </button>
+  `,
+})
+export class ConnectComponent {
+  private link = useSync2Books({
+    companyId: 'your-company-id',
+    applicationId: 'your-application-id',
+    applicationName: 'Your App Name',
+    apiKey: 'sk_live_your_api_key',
+    integrationKey: 'quickbooks',
+    onSuccess: (payload) => {
+      console.log('Connected!', payload);
+    },
+    onError: (error) => {
+      console.error('Connection failed:', error);
+    },
+  });
+
+  get isReady() {
+    return this.link.isReady;
+  }
+
+  connect() {
+    this.link.openLink();
+  }
+}
+```
+
+## Svelte Integration
+
+### Installation
+
+```bash
+npm install @sync2books/svelte
+```
+
+### Basic Usage
+
+```svelte
+<script>
+  import { useSync2Books } from '@sync2books/svelte';
+
+  const { openLink, isReady } = useSync2Books({
+    companyId: 'your-company-id',
+    applicationId: 'your-application-id',
+    applicationName: 'Your App Name',
+    apiKey: 'sk_live_your_api_key',
+    integrationKey: 'quickbooks',
+    onSuccess: (payload) => {
+      console.log('Connected!', payload);
+    },
+    onError: (error) => {
+      console.error('Connection failed:', error);
+    },
+  });
+</script>
+
+<button on:click={() => openLink()} disabled={!isReady}>
+  Connect QuickBooks
+</button>
+```
+
+## Customization
+
+### Application Settings
+
+Configure your application's Link appearance in the dashboard:
+
+1. Go to **Applications** → **Settings**
+2. Set **Link Logo URL** - Your app's logo (shown in OAuth consent)
+3. Set **Link Display Name** - Your app's name (shown in OAuth consent)
+4. Add **Redirect URIs** - URLs where users are redirected after OAuth
+
+### Redirect URIs
+
+Redirect URIs must be configured in your application settings. Examples:
+
+- `http://localhost:3000/callback`
+- `https://app.example.com/callback`
+- `https://app.example.com/application/{applicationId}/connect`
+
+After successful OAuth, users are redirected to the first matching URI from your configured list.
+
+## Error Handling
+
+### User Recoverable Errors
+
+Some errors allow users to retry:
+
+```typescript
+onLinkError: ({ message, userRecoverable }) => {
+  if (userRecoverable) {
+    // Show retry button
+    setShowRetry(true);
+  } else {
+    // Show error message
+    setErrorMessage(message);
+  }
+}
+```
+
+### Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `No auth strategy provided` | Missing `apiKey` or `getAuthUrl` | Provide API key |
+| `Connection failed` | OAuth authorization failed | User needs to retry |
+| `Connection expired` | OAuth token expired | Reconnect the integration |
+
+## Best Practices
+
+1. **Show loading state** - Disable buttons until `isReady` is `true`
+2. **Handle errors gracefully** - Show user-friendly error messages
+3. **Store connection ID** - Save `connectionId` after successful connection
+4. **Test redirect URIs** - Ensure redirect URIs are correctly configured
+5. **Use production API keys** - Use `sk_live_...` keys in production
+
+## Link UI Preview
+
+The Link component shows a modal/dialog with the following steps:
+
+### Step 1: Integration Selection
+
+The user sees a searchable list of available integrations:
+
+```
+┌─────────────────────────────────────┐
+│  Connect to Accounting System       │
+├─────────────────────────────────────┤
+│  [Search integrations...]            │
+│                                      │
+│  ┌──────────────────────────────┐  │
+│  │ 🧾 QuickBooks Online         │  │
+│  │    Intuit                    │  │
+│  │    [Connect]                 │  │
+│  └──────────────────────────────┘  │
+│                                      │
+│  ┌──────────────────────────────┐  │
+│  │ 📊 Xero                      │  │
+│  │    Xero                     │  │
+│  │    [Connect] (Coming Soon)  │  │
+│  └──────────────────────────────┘  │
+│                                      │
+│  ┌──────────────────────────────┐  │
+│  │ 📈 Sage                      │  │
+│  │    Sage                     │  │
+│  │    [Connect] (Coming Soon)  │  │
+│  └──────────────────────────────┘  │
+└─────────────────────────────────────┘
+```
+
+### Step 2: OAuth Consent
+
+After selecting an integration, a new tab/window opens with the accounting system's OAuth consent page (e.g., QuickBooks). The modal shows:
+
+```
+┌─────────────────────────────────────┐
+│  ⏳ Waiting for QuickBooks          │
+│     connection...                  │
+├─────────────────────────────────────┤
+│  🔵 [Spinner]                      │
+│                                      │
+│  Enter your account details and     │
+│  log in to QuickBooks in the tab   │
+│  we opened to establish a data      │
+│  connection with Your App Name.     │
+│                                      │
+│  ┌──────────────────────────────┐  │
+│  │ QuickBooks didn't open?      │  │
+│  │ [Open QuickBooks]            │  │
+│  └──────────────────────────────┘  │
+└─────────────────────────────────────┘
+```
+
+### Step 3: Success
+
+After successful OAuth, the modal shows:
+
+```
+┌─────────────────────────────────────┐
+│  ✅ Connection created successfully │
+├─────────────────────────────────────┤
+│  Your App Name is now connected to   │
+│  QuickBooks Online.                 │
+│                                      │
+│  ┌──────────────────────────────┐  │
+│  │ What's next?                 │  │
+│  │ You can now configure        │  │
+│  │ mappings and start syncing    │  │
+│  │ data.                         │  │
+│  └──────────────────────────────┘  │
+│                                      │
+│  [Complete]                          │
+└─────────────────────────────────────┘
+```
+
+### Customization
+
+The Link component can be customized via your application settings:
+
+- **Logo** - Set `linkLogoUrl` to show your app's logo in the OAuth consent screen
+- **Display Name** - Set `linkDisplayName` to show your app's name (e.g., "Your App Name")
+- **Redirect URIs** - Configure where users are redirected after OAuth completes
+
+## Next Steps
+
+- **[Getting Started](./getting-started.md)** - Set up your API key
+- **[Expense Management](./expense-management.md)** - Create and sync expenses
+- **[Sync & Monitoring](./sync-and-monitoring.md)** - Track sync status
