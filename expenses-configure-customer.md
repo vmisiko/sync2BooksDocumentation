@@ -1,0 +1,152 @@
+# Configure customer in Sync2Books
+
+Create a company and its connection that form the structure required to execute the expense sync process
+
+## Overview
+
+When implementing your Expenses solution, you need to create your SMB customer as a company in Sync2Books before registering their accounting software as a connection. You can do that when the customer starts interacting with your application.
+
+Next, you will connect the company to a data source via one of our integrations. With Expenses, each company will have at least one data connection: one to the SMB's accounting software.
+
+A diagram displaying the relationship of a company and data connections
+
+```
+┌─────────────┐
+│   Company   │
+│  (SMB)      │
+└──────┬──────┘
+       │
+       ├─────────▶ ┌─────────────────────┐
+       │           │ Accounting Connection│
+       │           │ (QuickBooks/Xero)    │
+       │           └─────────────────────┘
+```
+
+## Authorize your API calls
+
+Remember to authenticate when making calls to our API. Navigate to **Applications** → Select your application in the [Sync2Books Dashboard](https://app.sync2books.com) to pick up your authorization header.
+
+Your API key will look like: `sk_live_abc123...` or `sk_test_xyz789...`
+
+## Create a company
+
+Within Expenses, a company represents your SMB customer that manages their expenses using your application. To create it, use our Create company endpoint. It returns a JSON response containing the company `id`. You will use this `id` to establish a connection to an accounting software.
+
+#### Request
+
+```bash
+POST /companies
+
+{
+    "name": "{companyName}"
+}
+```
+
+#### Response
+
+```json
+{
+  "company": {
+    "id": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+    "name": "Sawayn Group",
+    "isActive": true
+  },
+  "authUrl": "https://appcenter.intuit.com/connect/oauth2?..."
+}
+```
+
+## Create accounting connection
+
+Next, use the authorization URL returned when creating a company to connect the company to an accounting data source via one of our integrations. This will allow you to synchronize data with that source.
+
+### Supported accounting software
+
+| Accounting software | Integration Key |
+|---------------------|----------------|
+| QuickBooks Online | `QUICKBOOKS` |
+| QuickBooks Desktop | `QUICKBOOKS_DESKTOP` |
+| Xero | `XERO` |
+| Sage | `SAGE` |
+
+### QuickBooks Online connection
+
+As an example, let's create a QuickBooks Online connection. In response, the endpoint returns an `authUrl`. Direct your customer to the `authUrl` to initiate our Link auth flow and enable them to authorize this connection.
+
+#### Get authorization URL
+
+```bash
+GET /companies/{companyId}/auth-url?integrationKey=QUICKBOOKS
+```
+
+#### Response
+
+```json
+{
+  "authUrl": "https://appcenter.intuit.com/connect/oauth2?client_id=...&scope=...&redirect_uri=..."
+}
+```
+
+#### Complete authorization
+
+1. Open the `authUrl` in a browser
+2. Complete the OAuth authorization flow with QuickBooks
+3. After authorization, the connection is automatically created
+
+#### List connections
+
+```bash
+GET /companies/{companyId}/connections
+```
+
+#### Response
+
+```json
+{
+  "connections": [
+    {
+      "id": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
+      "integrationKey": "QUICKBOOKS",
+      "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+      "status": "CONNECTED",
+      "created": "2022-09-01T10:21:57.0807447Z"
+    }
+  ]
+}
+```
+
+## Connection status
+
+Connections can have the following statuses:
+
+| Status | Description |
+|--------|-------------|
+| `CONNECTED` | Connection is active and ready to sync |
+| `DISCONNECTED` | Connection was disconnected by the user |
+| `ERROR` | Connection has an error and needs attention |
+
+## Deauthorize a connection
+
+If your customer wants to revoke their approval and sever the connection to their accounting software, use the Unlink connection endpoint.
+
+#### Request
+
+```bash
+PATCH /companies/{companyId}/connections/{connectionId}
+
+{
+  "status": "DISCONNECTED"
+}
+```
+
+You can learn more about connection management best practices and see how you can provide this functionality in your app's UI.
+
+## Recap
+
+You have created the structure of key objects required by Sync2Books Expenses: a company and its connection to an accounting data source.
+
+Next, learn how to configure the company to associate the expenses with correct accounts, suppliers, and customers and enable your customers to indicate their preferred expense mapping options.
+
+## Read next
+
+* [Map transactions](./expenses-map-transactions.md) - Configure expense mapping preferences
+* [Create transactions](./expenses-create-transactions.md) - Learn how to create expense transactions
