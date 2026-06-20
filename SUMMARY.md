@@ -14,6 +14,20 @@
 * [Sync Transactions](expenses-sync-transactions.md)
 * [Upload Receipts](expenses-upload-receipts.md)
 
+## eTIMS Compliance (Kenya)
+
+* [eTIMS Overview](etims-overview.md)
+* [Get Started with eTIMS](etims-getting-started.md)
+* [Postman Collection](etims-postman.md)
+* [Provisioning](etims-provisioning.md)
+* [Catalog (Items)](etims-catalog.md)
+* [Sales & Credit Notes](etims-sales.md)
+* [Stock (Inventory)](etims-stock.md)
+* [Tracking Results](etims-tracking-results.md)
+* [Codes & Values](etims-codes.md)
+* [eTIMS API Reference](etims-api-reference.md)
+* [Third-Party Integrator (OSCU/KRA)](ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY.md)
+
 ## Expense Integrations
 
 ### QuickBooks Online
