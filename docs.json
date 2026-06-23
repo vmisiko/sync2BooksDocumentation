@@ -90,7 +90,7 @@
   },
   "logo": {
     "light": "/logo.svg",
-    "dark": "/logo.svg"
+    "dark": "/logo-dark.svg"
   },
   "navbar": {
     "links": [
