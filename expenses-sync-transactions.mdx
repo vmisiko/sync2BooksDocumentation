@@ -1,0 +1,311 @@
+---
+title: "Sync transactions"
+description: "Understand how the sync process works and monitor the status of your expense transactions"
+---
+
+Understand how the sync process works and monitor the status of your expense transactions
+
+## Overview
+
+When you create an expense transaction, Sync2Books automatically queues it for sync to your connected accounting system. The sync process happens asynchronously, allowing you to create multiple expenses efficiently without waiting for each sync to complete.
+
+## Sync lifecycle
+
+```
+┌─────────────┐
+│   PENDING   │  ← Expense created, waiting to sync
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│ PROCESSING  │  ← Currently syncing to accounting system
+└──────┬──────┘
+       │
+       ├─────────▶ ┌─────────────┐
+       │          │   SUCCESS   │  ← Synced successfully
+       │          └──────────────┘
+       │
+       └─────────▶ ┌─────────────┐
+                  │    FAILED    │  ← Sync failed (can retry)
+                  └──────────────┘
+```
+
+## Getting sync batch status
+
+After creating expenses, you receive a `syncBatchId`. Use this to check the sync status:
+
+### Endpoint
+
+```
+GET /sync/batches/{syncBatchId}
+```
+
+### Request
+
+```bash
+curl -X GET "https://api.sync2books.com/sync/batches/{syncBatchId}" \
+  -H "X-API-Key: sk_production_your_api_key"
+```
+
+### Response
+
+```json
+{
+  "batch": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+    "connectionId": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
+    "status": "completed",
+    "totalItems": 2,
+    "successfulItems": 2,
+    "failedItems": 0,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:31:00Z",
+    "completedAt": "2024-01-15T10:31:00Z"
+  },
+  "items": [
+    {
+      "id": "item-uuid-1",
+      "entityId": "expense-001",
+      "entityType": "Expense",
+      "status": "success",
+      "integrationResponse": {
+        "id": "qb-expense-id",
+        "syncToken": "0"
+      },
+      "syncErrorMessage": null,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:31:00Z"
+    },
+    {
+      "id": "item-uuid-2",
+      "entityId": "expense-002",
+      "entityType": "Expense",
+      "status": "success",
+      "integrationResponse": {
+        "id": "qb-expense-id-2",
+        "syncToken": "0"
+      },
+      "syncErrorMessage": null,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:31:00Z"
+    }
+  ]
+}
+```
+
+### Batch status values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Batch is queued, waiting to be processed |
+| `processing` | Currently syncing items to accounting system |
+| `completed` | All items processed (may include failures) |
+| `failed` | Batch processing failed entirely |
+
+### Item status values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Item is queued |
+| `processing` | Currently syncing |
+| `success` | Successfully synced to accounting system |
+| `failed` | Sync failed (can retry) |
+
+## Listing sync batches
+
+### Get all batches for a company
+
+```
+GET /sync/companies/{companyId}/batches
+```
+
+### Query parameters
+
+- `page` (number, default: 1) - Page number
+- `limit` (number, default: 20) - Items per page
+- `status` (string, optional) - Filter by status: `pending`, `processing`, `completed`, `failed`
+- `startDate` (string, optional) - Filter batches from this date (ISO 8601)
+- `endDate` (string, optional) - Filter batches until this date (ISO 8601)
+
+### Example
+
+```bash
+curl -X GET "https://api.sync2books.com/sync/companies/{companyId}/batches?page=1&limit=20&status=completed" \
+  -H "X-API-Key: sk_production_your_api_key"
+```
+
+### Response
+
+```json
+{
+  "batches": [
+    {
+      "id": "batch-uuid-1",
+      "status": "completed",
+      "totalItems": 5,
+      "successfulItems": 5,
+      "failedItems": 0,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "completedAt": "2024-01-15T10:31:00Z"
+    },
+    {
+      "id": "batch-uuid-2",
+      "status": "completed",
+      "totalItems": 3,
+      "successfulItems": 2,
+      "failedItems": 1,
+      "createdAt": "2024-01-14T09:00:00Z",
+      "completedAt": "2024-01-14T09:01:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2,
+    "totalPages": 1
+  }
+}
+```
+
+## Handling failed syncs
+
+### Get failed items
+
+```
+GET /sync/batches/{syncBatchId}/failed-items
+```
+
+### Example
+
+```bash
+curl -X GET "https://api.sync2books.com/sync/batches/{syncBatchId}/failed-items" \
+  -H "X-API-Key: sk_production_your_api_key"
+```
+
+### Response
+
+```json
+{
+  "items": [
+    {
+      "id": "item-uuid",
+      "entityId": "expense-uuid",
+      "entityType": "Expense",
+      "status": "failed",
+      "syncErrorMessage": "Invalid account ID: account-xyz does not exist",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:31:00Z"
+    }
+  ]
+}
+```
+
+### Retry failed items
+
+```
+POST /sync/batches/{syncBatchId}/retry
+```
+
+### Request body
+
+```json
+{
+  "itemIds": ["item-uuid-1", "item-uuid-2"]
+}
+```
+
+If `itemIds` is empty or omitted, all failed items will be retried.
+
+### Example
+
+```bash
+curl -X POST "https://api.sync2books.com/sync/batches/{syncBatchId}/retry" \
+  -H "X-API-Key: sk_production_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "itemIds": ["item-uuid-1"]
+  }'
+```
+
+### Response
+
+```json
+{
+  "retriedItems": 1,
+  "newBatchId": "new-batch-uuid"
+}
+```
+
+## Polling strategy
+
+For real-time status updates, poll the sync batch status:
+
+### Recommended approach
+
+1. **Initial Poll**: Wait 2 seconds after creating expense
+2. **Poll Interval**: Check every 2-3 seconds
+3. **Timeout**: Stop polling after 60 seconds (syncs typically complete in 5-15 seconds)
+4. **Exponential Backoff**: If status is `processing`, increase interval slightly
+
+### Example implementation (JavaScript)
+
+```javascript
+async function pollSyncStatus(syncBatchId, apiKey, timeoutMs = 60000) {
+  const startTime = Date.now();
+  const pollInterval = 2000; // 2 seconds
+
+  while (Date.now() - startTime < timeoutMs) {
+    const response = await fetch(
+      `https://api.sync2books.com/sync/batches/${syncBatchId}`,
+      {
+        headers: { 'X-API-Key': apiKey }
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (data.batch.status === 'completed') {
+      return data;
+    }
+    
+    if (data.batch.status === 'failed') {
+      throw new Error('Sync batch failed');
+    }
+    
+    // Wait before next poll
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  }
+  
+  throw new Error('Sync status polling timeout');
+}
+```
+
+## Webhooks
+
+Instead of polling, you can configure webhooks to receive real-time notifications when syncs complete. Contact support for webhook configuration.
+
+## Common error messages
+
+| Error Message | Cause | Solution |
+|--------------|-------|----------|
+| `Invalid account ID` | Account doesn't exist in accounting system | Verify account ID or create account first |
+| `Invalid tax rate ID` | Tax rate doesn't exist | Verify tax rate ID or create tax rate first |
+| `Connection expired` | OAuth token expired | Reconnect the accounting system via Link |
+| `Rate limit exceeded` | Too many requests to accounting system | Wait and retry with exponential backoff |
+| `Validation error` | Invalid data format | Check request body against API schema |
+
+## Best practices
+
+1. **Always check sync status** - Don't assume syncs succeed immediately
+2. **Implement retry logic** - Handle transient failures gracefully
+3. **Log sync errors** - Track failed syncs for debugging
+4. **Monitor batch completion** - Set up alerts for high failure rates
+5. **Use webhooks when available** - More efficient than polling
+
+## Read next
+
+* [Create transactions](/expenses-create-transactions) - Learn how to create expense transactions
+* [Upload receipts](/expenses-upload-receipts) - Attach files to synced transactions
+* [Configure customer](/expenses-configure-customer) - Set up companies and connections
+

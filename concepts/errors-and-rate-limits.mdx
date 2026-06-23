@@ -1,0 +1,53 @@
+---
+title: "Errors & rate limits"
+description: "The consistent error shape, common HTTP status codes, and rate-limit headers used across the Sync2Books API."
+---
+
+The Sync2Books API uses conventional HTTP status codes and a single, consistent
+error shape across every product.
+
+## Error shape
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request"
+}
+```
+
+`message` may be a string or an array of validation messages. Always read the
+HTTP status first, then `message` for the human-readable detail.
+
+## Common status codes
+
+| Status | Meaning |
+|--------|---------|
+| `200` | Success. |
+| `201` | Created. |
+| `400` | Bad request — validation error. |
+| `401` | Unauthorized — missing/invalid API key, or invalid signature. See [Authentication](/concepts/authentication). |
+| `403` | Authenticated, but not allowed for this resource. |
+| `404` | Not found. |
+| `409` | Conflict — e.g. connecting a company that is already connected. |
+| `429` | Too many requests — rate limit exceeded. |
+| `500` | Internal server error. |
+
+## Rate limits
+
+Limits are applied **per application, per minute**. Every response includes the
+current state in headers:
+
+| Header | Meaning |
+|--------|---------|
+| `X-RateLimit-Limit` | Maximum requests per window. |
+| `X-RateLimit-Remaining` | Requests remaining in the current window. |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets. |
+
+When you receive a `429`, back off until the time in `X-RateLimit-Reset` and retry.
+
+<Tip>
+Because most writes are asynchronous (you receive a `syncBatchId` rather than
+waiting for the external system), you rarely need aggressive polling. Prefer
+[webhooks](/concepts/sync-model) over tight retry loops.
+</Tip>

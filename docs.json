@@ -1,0 +1,117 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Sync2Books",
+  "colors": {
+    "primary": "#4F46E5",
+    "light": "#818CF8",
+    "dark": "#4338CA"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core concepts",
+            "pages": [
+              "concepts/authentication",
+              "concepts/companies-and-connections",
+              "concepts/sync-model",
+              "concepts/environments",
+              "concepts/errors-and-rate-limits"
+            ]
+          },
+          {
+            "group": "Expenses",
+            "pages": [
+              "expenses-overview",
+              "expenses-getting-started",
+              "expenses-configure-customer",
+              "expenses-map-transactions",
+              "expenses-create-transactions",
+              "expenses-sync-transactions",
+              "expenses-upload-receipts"
+            ]
+          },
+          {
+            "group": "eTIMS compliance (Kenya)",
+            "pages": [
+              "etims-overview",
+              "etims-getting-started",
+              "etims-provisioning",
+              "etims-catalog",
+              "etims-sales",
+              "etims-stock",
+              "etims-tracking-results",
+              "etims-codes",
+              "etims-postman",
+              "ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY"
+            ]
+          },
+          {
+            "group": "Accounting integrations",
+            "pages": [
+              "integrations/quickbooks-online/quickbooks-online-overview",
+              "integrations/quickbooks-online/quickbooks-online-setup",
+              "integrations/quickbooks-online/quickbooks-online-faq",
+              "integrations/quickbooks-online/quickbooks-online-reference"
+            ]
+          },
+          {
+            "group": "Link component",
+            "pages": [
+              "link-integration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "api-reference",
+              "etims-api-reference"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo.svg",
+    "dark": "/logo.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@sync2books.com"
+      },
+      {
+        "label": "Interactive API",
+        "href": "https://api.sync2books.com/api"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://sync2books.com/dashboard"
+    }
+  },
+  "footer": {
+    "socials": {
+      "website": "https://sync2books.com"
+    }
+  }
+}

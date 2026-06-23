@@ -1,0 +1,148 @@
+---
+title: "Authentication"
+description: "How Sync2Books authenticates API requests: your API key, the optional request signature, and the client secret used to sign it."
+---
+
+Every Sync2Books API request authenticates with an **API key** sent in the `X-API-Key`
+header. This single mechanism is shared across **all** products — Expenses, eTIMS
+compliance, sync, attachments. Learn it once and it applies everywhere.
+
+<Note>
+There is **no `/v1` path prefix** and no separate auth endpoint. You authenticate
+on every request by setting headers. The base URL is
+`https://api.sync2books.com`. See [Environments & base URLs](/concepts/environments).
+</Note>
+
+## Credentials at a glance
+
+When you create an application in the [dashboard](https://sync2books.com/dashboard), each
+environment (Development and Production) is issued a set of credentials:
+
+| Credential | Looks like | Used for |
+|------------|------------|----------|
+| **API key** | `sk_development_…` / `sk_production_…` | Authenticating every request (`X-API-Key` header). |
+| **Client secret** | `cs_…` | Signing requests (the optional HMAC `X-Signature`). Treat as a password. |
+| **Client ID** | `client_…` | Identifying your application in OAuth/Link flows. |
+| **Webhook secret** | `whsec_development_…` / `whsec_production_…` | Verifying inbound webhook payloads (not request auth). |
+
+<Warning>
+The **client secret** (`cs_…`) and **webhook secret** (`whsec_…`) are sensitive.
+Never embed them in browser or mobile code. The API key is less sensitive but
+should still be kept server-side in production.
+</Warning>
+
+## Step 1 — Get your API key
+
+1. Sign in to the [Sync2Books Dashboard](https://sync2books.com/dashboard).
+2. Open your application and go to **API Keys**.
+3. Toggle between **Development** and **Production** and copy the key. Use
+   **Development** while building.
+
+```text
+sk_development_x9y8z7...      # safe for testing
+sk_production_a1b2c3...       # live credentials
+```
+
+## Step 2 — Authenticate a request
+
+Send the key in the `X-API-Key` header on every call:
+
+```bash
+curl -X GET "https://api.sync2books.com/companies" \
+  -H "X-API-Key: sk_development_x9y8z7..."
+```
+
+That is all most integrations need. The signature below is optional.
+
+## Step 3 — (Optional) Sign your requests
+
+For stronger security you may **sign** each request with your **client secret**.
+When you send the signature headers, the API validates them; if you omit them, the
+API key alone authenticates.
+
+| Header | Value |
+|--------|-------|
+| `X-Signature` | `HMAC-SHA256(clientSecret, message)`, hex-encoded |
+| `X-Timestamp` | Unix time in **milliseconds**; must be within **5 minutes** of server time |
+
+The signed `message` is the concatenation, with no separators:
+
+```text
+message = METHOD + PATH + BODY + TIMESTAMP
+```
+
+- `METHOD` — uppercase HTTP method, e.g. `POST`
+- `PATH` — request path, e.g. `/companies/abc/integrations/etims/sales`
+- `BODY` — the exact JSON request body (empty string for GET)
+- `TIMESTAMP` — the same value you send in `X-Timestamp`
+
+<CodeGroup>
+```javascript Node.js
+import crypto from "crypto";
+
+function signedHeaders(method, path, body, clientSecret, apiKey) {
+  const timestamp = Date.now().toString();
+  const payload = body ? JSON.stringify(body) : "";
+  const message = `${method.toUpperCase()}${path}${payload}${timestamp}`;
+  const signature = crypto
+    .createHmac("sha256", clientSecret)
+    .update(message)
+    .digest("hex");
+  return {
+    "X-API-Key": apiKey,
+    "X-Signature": signature,
+    "X-Timestamp": timestamp,
+    "Content-Type": "application/json",
+  };
+}
+```
+
+```python Python
+import hmac, hashlib, time, json
+
+def signed_headers(method, path, body, client_secret, api_key):
+    timestamp = str(int(time.time() * 1000))
+    payload = json.dumps(body) if body else ""
+    message = f"{method.upper()}{path}{payload}{timestamp}"
+    signature = hmac.new(
+        client_secret.encode(), message.encode(), hashlib.sha256
+    ).hexdigest()
+    return {
+        "X-API-Key": api_key,
+        "X-Signature": signature,
+        "X-Timestamp": timestamp,
+        "Content-Type": "application/json",
+    }
+```
+</CodeGroup>
+
+<Warning>
+The signed `BODY` must be **byte-for-byte identical** to what you send. If your
+HTTP client re-serializes the JSON, sign the exact serialized string you transmit.
+</Warning>
+
+## Authentication errors
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Missing or invalid API key, inactive application, or invalid signature. |
+| `403` | Valid key, but not authorized for that company/resource. |
+
+See [Errors & rate limits](/concepts/errors-and-rate-limits) for the full error model.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Companies & connections" icon="building" href="/concepts/companies-and-connections">
+    Model your customers and link their accounting systems.
+  </Card>
+  <Card title="The sync model" icon="arrows-rotate" href="/concepts/sync-model">
+    Understand sync batches and the asynchronous result flow.
+  </Card>
+  <Card title="Environments & base URLs" icon="server" href="/concepts/environments">
+    Development vs production, and the correct base URL.
+  </Card>
+  <Card title="Errors & rate limits" icon="triangle-exclamation" href="/concepts/errors-and-rate-limits">
+    Status codes, error shape, and throttling headers.
+  </Card>
+</CardGroup>

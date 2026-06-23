@@ -1,0 +1,96 @@
+---
+title: "Quickstart"
+description: "Get an API key, connect an accounting system, and sync your first expense in about five minutes."
+---
+
+This quickstart takes you from zero to a synced expense. Building Kenyan tax
+compliance instead? Jump to the [eTIMS quickstart](/etims-getting-started).
+
+<Steps>
+  <Step title="Get your API key">
+    Sign in to the [Sync2Books Dashboard](https://sync2books.com/dashboard), open your
+    application, and copy the **Development** API key from **API Keys**.
+
+    ```text
+    sk_development_x9y8z7...
+    ```
+
+    Full details — including the optional request signature — are in
+    [Authentication](/concepts/authentication).
+  </Step>
+
+  <Step title="Create a company">
+    A company represents your SMB customer.
+
+    ```bash
+    curl -X POST "https://api.sync2books.com/companies" \
+      -H "X-API-Key: sk_development_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{ "name": "Acme Corporation" }'
+    ```
+
+    The response includes the company `id` and an `authUrl` to connect an
+    accounting system. See [Companies & connections](/concepts/companies-and-connections).
+  </Step>
+
+  <Step title="Connect an accounting system">
+    Use the [Link component](/link-integration) (recommended) or open the `authUrl`
+    in a browser and complete the OAuth flow. Then list the company's connections to
+    get the `connectionId`:
+
+    ```bash
+    curl -X GET "https://api.sync2books.com/companies/{companyId}/connections" \
+      -H "X-API-Key: sk_development_your_api_key"
+    ```
+  </Step>
+
+  <Step title="Sync your first expense">
+    ```bash
+    curl -X POST "https://api.sync2books.com/expenses/{connectionId}" \
+      -H "X-API-Key: sk_development_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "id": "exp-001",
+        "type": "Payment",
+        "issueDate": "2024-01-15T00:00:00Z",
+        "currency": "USD",
+        "currencyRate": 1,
+        "merchantName": "Amazon",
+        "lines": [
+          {
+            "netAmount": 100.00,
+            "taxAmount": 10.00,
+            "taxRateRef": { "id": "tax-rate-id" },
+            "accountRef": { "id": "account-id" }
+          }
+        ]
+      }'
+    ```
+
+    ```json
+    { "syncBatchId": "550e8400-e29b-41d4-a716-446655440000", "totalExpenses": 1 }
+    ```
+  </Step>
+
+  <Step title="Confirm the sync">
+    Writes are asynchronous — check the batch to see the result:
+
+    ```bash
+    curl -X GET "https://api.sync2books.com/sync/batches/{syncBatchId}" \
+      -H "X-API-Key: sk_development_your_api_key"
+    ```
+
+    See [The sync model](/concepts/sync-model) for statuses and error handling.
+  </Step>
+</Steps>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Expenses guide" icon="receipt" href="/expenses-getting-started">
+    Map transactions, configure customers, and upload receipts.
+  </Card>
+  <Card title="eTIMS quickstart" icon="file-invoice" href="/etims-getting-started">
+    From sign-up to your first KRA-signed receipt.
+  </Card>
+</CardGroup>

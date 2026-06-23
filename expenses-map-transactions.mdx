@@ -1,0 +1,293 @@
+---
+title: "Map transactions"
+description: "Associate expense transactions with the correct accounts, tax rates, suppliers, and customers in your customer's accounting software"
+---
+
+Associate expense transactions with the correct accounts, tax rates, suppliers, and customers in your customer's accounting software
+
+## Overview
+
+Before creating expense transactions, you need to understand how to map your expense data to the correct accounts, tax rates, suppliers, and customers in your customer's accounting software. This ensures expenses are categorized correctly and appear in the right place in their books.
+
+## Configuration levels
+
+Sync2Books supports expense mapping at two levels:
+
+1. **Company-level defaults** - Set default mappings that apply to all expenses for a company
+2. **Transaction-level overrides** - Specify mappings for individual expense transactions
+
+## Company-level configuration
+
+Set default mappings at the company level to ensure expenses are automatically categorized correctly even if specific references are omitted in individual transactions.
+
+### Configure expense defaults
+
+#### Request
+
+```bash
+PATCH /companies/{companyId}/expense-config
+
+{
+  "bankAccount": {
+    "id": "bank-account-id"
+  },
+  "supplier": {
+    "id": "supplier-id"
+  },
+  "customer": {
+    "id": "customer-id"
+  },
+  "defaultAccount": {
+    "id": "expense-account-id"
+  },
+  "defaultTaxRate": {
+    "id": "tax-rate-id"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+  "bankAccount": {
+    "id": "41",
+    "name": "Checking Account"
+  },
+  "supplier": {
+    "id": "supplier-123",
+    "name": "Default Supplier"
+  },
+  "defaultAccount": {
+    "id": "64",
+    "name": "Office Expenses"
+  },
+  "defaultTaxRate": {
+    "id": "tax-10",
+    "name": "Sales Tax 10%"
+  }
+}
+```
+
+### Get expense configuration
+
+#### Request
+
+```bash
+GET /companies/{companyId}/expense-config
+```
+
+#### Response
+
+```json
+{
+  "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+  "bankAccount": {
+    "id": "41",
+    "name": "Checking Account"
+  },
+  "supplier": {
+    "id": "supplier-123",
+    "name": "Default Supplier"
+  },
+  "defaultAccount": {
+    "id": "64",
+    "name": "Office Expenses"
+  },
+  "defaultTaxRate": {
+    "id": "tax-10",
+    "name": "Sales Tax 10%"
+  }
+}
+```
+
+## Transaction-level mapping
+
+When creating an expense transaction, you can specify mappings for that specific transaction. These override company-level defaults.
+
+### Required mappings
+
+- **`accountRef`** - The expense account to categorize the expense
+- **`taxRateRef`** - The tax rate to apply (if applicable)
+
+### Optional mappings
+
+- **`contactRef`** - Supplier or customer associated with the expense
+- **`bankAccountRef`** - Bank account used for the payment
+- **`trackingRefs`** - Tracking categories for reporting
+- **`invoiceTo`** - Customer to invoice (for billable expenses)
+
+### Example expense with mappings
+
+```json
+{
+  "id": "expense-001",
+  "type": "Payment",
+  "issueDate": "2024-01-15T00:00:00Z",
+  "currency": "USD",
+  "currencyRate": 1,
+  "merchantName": "Office Supplies Co",
+  "contactRef": {
+    "id": "supplier-id",
+    "type": "Supplier"
+  },
+  "bankAccountRef": {
+    "id": "bank-account-id"
+  },
+  "lines": [
+    {
+      "netAmount": 100.00,
+      "taxAmount": 10.00,
+      "taxRateRef": {
+        "id": "tax-rate-id"
+      },
+      "accountRef": {
+        "id": "expense-account-id"
+      },
+      "trackingRefs": [
+        {
+          "id": "tracking-category-id",
+          "dataType": "trackingCategories"
+        }
+      ],
+      "invoiceTo": {
+        "id": "customer-id",
+        "type": "Customer"
+      }
+    }
+  ],
+  "notes": "Office supplies for Q1 2024"
+}
+```
+
+## Getting reference IDs
+
+Before creating expenses, you need valid IDs from your customer's accounting system. You can retrieve these using Sync2Books reference endpoints.
+
+### Get accounts
+
+#### Request
+
+```bash
+GET /connections/{connectionId}/accounts
+```
+
+#### Response
+
+```json
+{
+  "accounts": [
+    {
+      "id": "64",
+      "name": "Office Expenses",
+      "type": "Expense",
+      "status": "Active"
+    },
+    {
+      "id": "65",
+      "name": "Travel Expenses",
+      "type": "Expense",
+      "status": "Active"
+    }
+  ]
+}
+```
+
+### Get tax rates
+
+#### Request
+
+```bash
+GET /connections/{connectionId}/tax-rates
+```
+
+#### Response
+
+```json
+{
+  "taxRates": [
+    {
+      "id": "tax-10",
+      "name": "Sales Tax 10%",
+      "rate": 10.0,
+      "status": "Active"
+    }
+  ]
+}
+```
+
+### Get suppliers
+
+#### Request
+
+```bash
+GET /connections/{connectionId}/suppliers
+```
+
+#### Response
+
+```json
+{
+  "suppliers": [
+    {
+      "id": "supplier-123",
+      "name": "Office Supplies Co",
+      "status": "Active"
+    }
+  ]
+}
+```
+
+### Get customers
+
+#### Request
+
+```bash
+GET /connections/{connectionId}/customers
+```
+
+#### Response
+
+```json
+{
+  "customers": [
+    {
+      "id": "customer-456",
+      "name": "Acme Corp",
+      "status": "Active"
+    }
+  ]
+}
+```
+
+## Fallback behavior
+
+If a transaction omits a reference (e.g., `contactRef` or `bankAccountRef`), Sync2Books will:
+
+1. Check for company-level defaults
+2. Use the default if available
+3. Return an error if required and no default is set
+
+### Example: Missing contact reference
+
+If an expense transaction doesn't include a `contactRef`:
+
+1. Sync2Books checks for a company-level `supplier` default
+2. If found, uses that supplier
+3. If not found, checks for a company-level `customer` default
+4. If still not found, the sync may fail (depending on accounting software requirements)
+
+## Best practices
+
+1. **Set company-level defaults** - Configure defaults for common mappings to reduce transaction complexity
+2. **Validate reference IDs** - Ensure all IDs exist in the accounting system before creating expenses
+3. **Use tracking categories** - Leverage tracking categories for better reporting and categorization
+4. **Handle billable expenses** - Use `invoiceTo` to mark expenses as billable to customers
+5. **Document mappings** - Keep a record of your mapping strategy for each customer
+
+## Read next
+
+* [Create transactions](/expenses-create-transactions) - Learn how to create expense transactions with proper mappings
+* [Sync transactions](/expenses-sync-transactions) - Understand how mappings are applied during sync
+
