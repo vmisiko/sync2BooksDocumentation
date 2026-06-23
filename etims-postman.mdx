@@ -1,0 +1,95 @@
+---
+title: "eTIMS Postman collection"
+description: "A ready-to-run Postman collection with every operational eTIMS request — catalog, stock, and sales."
+---
+
+A ready-to-run Postman collection with every operational eTIMS request — catalog,
+stock, and sales — so you can start calling the API in minutes.
+
+## Download
+
+<a href="/assets/etims-postman-collection.txt" download="etims-postman-collection.json">
+  <Card title="Download the eTIMS Postman collection" icon="download">
+    Saves <code>etims-postman-collection.json</code> to your machine. Then import it
+    into Postman with <strong>Import → File</strong>.
+  </Card>
+</a>
+
+<Note>
+The download is wired so the file saves directly as
+`etims-postman-collection.json` — it no longer opens the raw JSON in a browser tab,
+which was the previous behaviour. (Postman imports the file regardless of extension.)
+</Note>
+
+<Tip>
+Maintainers: publish this collection to your Postman workspace to get a public
+**“Run in Postman”** button and a shareable link, then add it here:
+`[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/<your-collection-id>)`
+</Tip>
+
+## What's inside
+
+| Folder | Requests |
+|--------|----------|
+| **Setup** | Create company · Provision eTIMS *(advanced — usually done in the dashboard)* |
+| **Catalog** | Register item · List items · Sync items to eTIMS |
+| **Stock** | Adjust stock (ADD/DEDUCT) · Transfer stock |
+| **Sales** | Create sale · List sales · Get sale · Express credit note |
+
+Authentication is preconfigured: the collection sends your key in the `X-API-Key`
+header on every request. See [Authentication](/concepts/authentication) for the full
+auth model.
+
+## Import & configure (2 minutes)
+
+1. In Postman: **Import → File** → select `etims-postman-collection.json`.
+2. Open the collection's **Variables** tab and set:
+
+   | Variable | Set to | Where to get it |
+   |----------|--------|-----------------|
+   | `baseUrl` | `https://api.sync2books.com` | (already set) |
+   | `apiKey` | your `sk_development_…` key | Dashboard → Application → API Keys |
+   | `companyId` | your company id | Dashboard, or **Create company** response |
+   | `branchId` | `HQ` | the branch key from provisioning |
+   | `itemId` | *(fill after the step below)* | **List items** response (`id`) |
+   | `saleId` | *(fill after the step below)* | **Create sale** → accepted document id |
+
+3. Make sure the company is **connected to eTIMS** (provision it in the dashboard
+   first — see [Provisioning](/etims-provisioning)).
+
+## Suggested run order
+
+The requests have prerequisites — run them in this order the first time:
+
+```text
+1. Catalog → Register catalog item        → returns { syncBatchId }
+2. Catalog → List catalog items           → copy an item id into {{itemId}}
+3. Catalog → Sync items to eTIMS          → item becomes REGISTERED (sellable)
+4. Stock   → Adjust stock (ADD)           → seed inventory (GOODS only; skip for SERVICE)
+5. Sales   → Create sale                  → returns { syncBatchId }
+6. Sales   → List sales                   → find ACCEPTED + etimsReceiptNumber; copy id into {{saleId}}
+7. Sales   → Express credit note (optional)
+```
+
+<Note>
+Most write requests are **asynchronous** — they return a `syncBatchId` and the
+result is confirmed shortly after. Use **List items** / **List sales** to confirm
+the outcome. See [Tracking results](/etims-tracking-results).
+</Note>
+
+## Environments (dev vs prod)
+
+The collection variables default to the development setup. To switch to production,
+create a Postman **Environment** with a production `baseUrl` and your `sk_production_…`
+key, and select it before running. See [Environments & base URLs](/concepts/environments).
+
+## Read next
+
+<CardGroup cols={2}>
+  <Card title="Get started with eTIMS" icon="play" href="/etims-getting-started">
+    The guided journey from sign-up to first receipt.
+  </Card>
+  <Card title="eTIMS API reference" icon="code" href="/etims-api-reference">
+    Full field and enum reference.
+  </Card>
+</CardGroup>

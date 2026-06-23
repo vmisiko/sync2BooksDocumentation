@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "Sync2Books — eTIMS Integration",
+    "description": "Operational eTIMS endpoints for the Sync2Books API.\n\nSetup (account, application, API key, and connecting a company to eTIMS) is done in the dashboard — see the eTIMS docs. These requests cover the day-to-day API: catalog, stock, and sales.\n\nBefore you start, set the collection variables: `baseUrl`, `apiKey`, `companyId`, and `branchId`. After registering an item, copy its `id` (from List items) into `itemId`; after creating a sale, copy the accepted sale's `id` into `saleId`.\n\nAuth: the collection sends your key in the `X-API-Key` header automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key", "type": "string" },
+      { "key": "value", "value": "{{apiKey}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://api.sync2books.com", "type": "string" },
+    { "key": "apiKey", "value": "sk_development_REPLACE_ME", "type": "string" },
+    { "key": "companyId", "value": "", "type": "string" },
+    { "key": "applicationId", "value": "", "type": "string" },
+    { "key": "branchId", "value": "HQ", "type": "string" },
+    { "key": "externalId", "value": "sku-1001", "type": "string" },
+    { "key": "itemId", "value": "", "type": "string" },
+    { "key": "saleId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Create company",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mama Mboga Stores\"\n}"
+            },
+            "description": "Create a company. Copy the returned company id into the `companyId` variable. (eTIMS connection is then provisioned in the dashboard.)"
+          }
+        },
+        {
+          "name": "Provision eTIMS (advanced — usually done in dashboard)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/provision",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kraPin\": \"P000000045T\",\n  \"environment\": \"SANDBOX\",\n  \"dvcSrlNo\": \"DVC-ABC123\",\n  \"displayName\": \"Mama Mboga Stores\",\n  \"sync2booksBranchKey\": \"HQ\",\n  \"kraBhfId\": \"00\"\n}"
+            },
+            "description": "Optional. Most integrations provision in the dashboard. Use this only for programmatic onboarding. Synchronous; 409 if already connected."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "Register catalog item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/catalog/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externalId\": \"{{externalId}}\",\n  \"name\": \"Maize Flour 2kg\",\n  \"sku\": \"MF-2KG\",\n  \"itemType\": \"GOODS\",\n  \"taxCategory\": \"VAT_STANDARD\",\n  \"classificationCode\": \"14111400\",\n  \"unitCode\": \"U\",\n  \"packagingUnitCode\": \"NT\"\n}"
+            },
+            "description": "Register a product. Returns { syncBatchId }. classificationCode is effectively required. Set itemType to GOODS (stock-tracked) or SERVICE (non-stock)."
+          }
+        },
+        {
+          "name": "List catalog items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/catalog/items",
+            "description": "List items. Copy an item's `id` into the `itemId` variable (this is NOT your externalId)."
+          }
+        },
+        {
+          "name": "Sync items to eTIMS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/catalog/items/sync",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"onlyPending\": true\n}"
+            },
+            "description": "Register pending items with KRA (assigns etimsItemCode). An item must be synced before it can be sold."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "Adjust stock (ADD)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/stock/adjust",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"{{itemId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"quantity\": 100,\n  \"action\": \"ADD\"\n}"
+            },
+            "description": "Add (or DEDUCT) stock. GOODS only — services are non-stock and need no stock. Sales deduct inventory, so add stock before selling a good. Note: HTTP PUT."
+          }
+        },
+        {
+          "name": "Transfer stock",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/stock/transfer",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"{{itemId}}\",\n  \"fromBranchId\": \"{{branchId}}\",\n  \"receivingItemId\": \"{{itemId}}\",\n  \"toBranchId\": \"BR-01\",\n  \"quantity\": 5\n}"
+            },
+            "description": "Move stock between items/branches. Returns { syncBatchId }."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "item": [
+        {
+          "name": "Create sale",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/sales",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"saleDate\": \"2026-06-20\",\n  \"traderInvoiceNumber\": \"INV-0001\",\n  \"receiptTypeCode\": \"S\",\n  \"paymentTypeCode\": \"01\",\n  \"invoiceStatusCode\": \"02\",\n  \"customerName\": \"Walk-in\",\n  \"items\": [\n    {\n      \"id\": \"{{itemId}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 100,\n      \"taxCategory\": \"VAT_STANDARD\",\n      \"taxAmount\": 32,\n      \"itemDescription\": \"Maize Flour 2kg\"\n    }\n  ]\n}"
+            },
+            "description": "Create + submit a sale. Item must be synced and have stock. Async: returns { syncBatchId }; poll List sales for the accepted sale with a KRA receipt number. Copy the accepted sale's id into `saleId`."
+          }
+        },
+        {
+          "name": "List sales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/sales?pageSize=20",
+            "description": "List sales. Optional query: before, after, startDate, endDate, pageSize."
+          }
+        },
+        {
+          "name": "Get sale",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/sales/{{saleId}}",
+            "description": "Get a single sale by its id."
+          }
+        },
+        {
+          "name": "Express credit note",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/companies/{{companyId}}/integrations/etims/sales/credit-notes/express",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"saleId\": \"{{saleId}}\",\n  \"traderInvoiceNumber\": \"CN-0001\",\n  \"returnDate\": \"2026-06-20\"\n}"
+            },
+            "description": "Reverse an accepted sale. Derives lines from the original sale. Returns { syncBatchId }."
+          }
+        }
+      ]
+    }
+  ]
+}

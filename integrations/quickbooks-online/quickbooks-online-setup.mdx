@@ -1,0 +1,148 @@
+---
+title: "Set up the QuickBooks Online integration"
+description: "Learn how to set up and enable the QuickBooks Online integration in Sync2Books."
+---
+
+Learn how to set up and enable the QuickBooks Online integration in Sync2Books.
+
+## Prerequisites
+
+Before setting up the QuickBooks Online integration, ensure you have:
+
+- ✅ **Sync2Books account** - An active Sync2Books account
+- ✅ **QuickBooks Online account** - A QuickBooks Online account (or sandbox account for testing)
+- ✅ **Intuit App** - A registered Intuit app (see below)
+
+## Step 1: Create an Intuit App
+
+To connect to QuickBooks Online, you need to create an app in the Intuit Developer Portal.
+
+1. Go to [Intuit Developer Portal](https://developer.intuit.com/)
+2. Sign in or create an account
+3. Click **Create an app**
+4. Select **QuickBooks Online** as the product
+5. Fill in your app details:
+   - **App Name**: Your application name
+   - **Redirect URI**: `https://api.sync2books.com/quickbooks/callback` (or your callback URL)
+   - **Scopes**: Select the required scopes (see below)
+6. Save your app credentials:
+   - **Client ID** (App ID)
+   - **Client Secret** (App Secret)
+
+### Required scopes
+
+For expense management, you need the following scopes:
+
+- `com.intuit.quickbooks.accounting` - Access to accounting data
+- `com.intuit.quickbooks.payment` - Access to payment data (if needed)
+
+## Step 2: Configure your Sync2Books application
+
+1. Log in to your [Sync2Books Dashboard](https://sync2books.com/dashboard)
+2. Navigate to **Applications** → Select your application
+3. Go to **Integrations** → **QuickBooks Online**
+4. Enter your Intuit app credentials:
+   - **Client ID**: Your Intuit App ID
+   - **Client Secret**: Your Intuit App Secret
+   - **Environment**: `sandbox` (for testing) or `production` (for live)
+5. Save the configuration
+
+## Step 3: Test the connection
+
+1. Create a test company in Sync2Books
+2. Get the authorization URL for QuickBooks Online
+3. Complete the OAuth flow
+4. Verify the connection is created successfully
+
+### Example: Create company and get auth URL
+
+```bash
+# Create company
+curl -X POST "https://api.sync2books.com/companies" \
+  -H "X-API-Key: {apiKey}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test Company"
+  }'
+
+# Response includes authUrl
+{
+  "company": {
+    "id": "company-uuid",
+    "name": "Test Company"
+  },
+  "authUrl": "https://appcenter.intuit.com/connect/oauth2?..."
+}
+
+# Get auth URL for existing company
+curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=QUICKBOOKS" \
+  -H "X-API-Key: {apiKey}"
+```
+
+## Step 4: Connect a company
+
+1. Open the `authUrl` in a browser
+2. Sign in to QuickBooks Online
+3. Authorize the connection
+4. You'll be redirected back to your application
+5. The connection is automatically created
+
+### Verify connection
+
+```bash
+curl -X GET "https://api.sync2books.com/companies/{companyId}/connections" \
+  -H "X-API-Key: {apiKey}"
+```
+
+You should see a connection with `integrationKey: "QUICKBOOKS"` and `status: "CONNECTED"`.
+
+## Sandbox vs Production
+
+### Sandbox (Testing)
+
+- Use for development and testing
+- Connect to QuickBooks Online sandbox companies
+- No real financial data
+- Faster rate limits
+
+### Production (Live)
+
+- Use for live customer connections
+- Connect to real QuickBooks Online companies
+- Real financial data
+- Stricter rate limits
+
+## Troubleshooting
+
+### Connection fails
+
+- Verify your Intuit app credentials are correct
+- Check that redirect URI matches your app configuration
+- Ensure required scopes are selected
+
+### OAuth flow doesn't complete
+
+- Check redirect URI configuration
+- Verify callback URL is accessible
+- Check browser console for errors
+
+### Connection status is ERROR
+
+- Check connection details in Sync2Books Dashboard
+- Verify OAuth token hasn't expired
+- Reconnect the company if needed
+
+## Next steps
+
+Once your integration is set up:
+
+1. [Configure expense mapping](/../expenses-map-transactions) - Set up default accounts and tax rates
+2. [Create your first expense](/../expenses-create-transactions) - Sync an expense transaction
+3. [Upload receipts](/../expenses-upload-receipts) - Attach files to expenses
+
+## Read next
+
+* [QuickBooks Online overview](/quickbooks-online-overview) - Learn about the integration
+* [QuickBooks Online integration reference](/quickbooks-online-reference) - API reference
+* [QuickBooks Online FAQs](/quickbooks-online-faq) - Common questions
+

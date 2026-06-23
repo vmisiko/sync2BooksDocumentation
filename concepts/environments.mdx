@@ -1,0 +1,52 @@
+---
+title: "Environments & base URLs"
+description: "The Sync2Books base URL, and the difference between Development and Production credentials."
+---
+
+## Base URL
+
+All API requests go to a single base URL — there is **no version path prefix**:
+
+```text
+https://api.sync2books.com
+```
+
+Endpoints sit directly under it, for example:
+
+- `POST /companies`
+- `POST /expenses/{connectionId}`
+- `GET  /sync/batches/{syncBatchId}`
+- `POST /companies/{companyId}/integrations/etims/sales`
+
+<Warning>
+Older examples that used `https://api.sync2books.com/v1/...` are **incorrect** —
+the API is not versioned with a `/v1` segment. Drop the `/v1`.
+</Warning>
+
+## Development vs Production
+
+Each application is issued **two independent credential sets**. The environment is
+encoded in the key prefix, so you can tell them apart at a glance:
+
+| Environment | API key prefix | Use for |
+|-------------|----------------|---------|
+| **Development** | `sk_development_…` | Building and testing. eTIMS calls hit the KRA **sandbox**. |
+| **Production** | `sk_production_…` | Live traffic. eTIMS calls hit live KRA. |
+
+Switch environments simply by swapping the API key (and client secret, if you sign
+requests). Nothing else in the request changes.
+
+<Note>
+For eTIMS specifically, the **connection** also carries an environment
+(`SANDBOX` / `PRODUCTION`) chosen when the company is provisioned. Use a
+development API key against a sandbox-provisioned company while testing.
+</Note>
+
+## Interactive API explorer
+
+The always-current, machine-generated schema is published with the running API:
+
+- Main API (Expenses, sync, eTIMS): `https://api.sync2books.com/api`
+- OpenAPI JSON: `https://api.sync2books.com/api-json`
+
+See the [API reference](/etims-api-reference) for the hand-written endpoint guide.

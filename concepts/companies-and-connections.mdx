@@ -1,0 +1,95 @@
+---
+title: "Companies & connections"
+description: "The shared object model behind every Sync2Books product: organizations, applications, companies, and connections."
+---
+
+Every Sync2Books product is built on the same small set of objects. Whether you are
+syncing expenses to QuickBooks or pushing sales to KRA eTIMS, you work with the same
+**companies** and **connections**.
+
+## The object model
+
+```text
+Organization ── Application ──┬── Credential (Development: sk_development_…)
+   (you)        (your product)└── Credential (Production:  sk_production_…)
+                     │
+                     └── Company ──┬── Connection (QuickBooks / Xero / Sage)
+                       (your SMB    └── Connection (eTIMS — Kenya compliance)
+                        customer)
+```
+
+| Object | What it represents |
+|--------|--------------------|
+| **Organization** | Your business on Sync2Books. |
+| **Application** | Your product or integration. Owns the API keys. |
+| **Company** | One of your SMB customers. Everything syncable is scoped to a company. |
+| **Connection** | A link from a company to an external system (an accounting platform, or eTIMS). |
+
+<Note>
+A single company can hold **multiple connections** — e.g. QuickBooks for expenses
+*and* an eTIMS connection for Kenyan tax compliance — at the same time.
+</Note>
+
+## Create a company
+
+A company represents your SMB customer. Create one with the `POST /companies`
+endpoint; the response includes the company `id` you use in every subsequent call.
+
+```bash
+curl -X POST "https://api.sync2books.com/companies" \
+  -H "X-API-Key: {apiKey}" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Acme Corporation" }'
+```
+
+```json
+{
+  "company": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Acme Corporation",
+    "isActive": true
+  },
+  "authUrl": "https://appcenter.intuit.com/connect/oauth2?..."
+}
+```
+
+Save `company.id`. For accounting integrations the response also returns an
+`authUrl` to start the OAuth connection.
+
+## Connect an accounting system (Expenses)
+
+To sync expenses, connect the company to an accounting platform. The simplest path
+is the [Link component](/link-integration); you can also drive the OAuth flow
+directly with the `authUrl`.
+
+```bash
+# fetch an authorization URL for an existing company
+curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=QUICKBOOKS" \
+  -H "X-API-Key: {apiKey}"
+```
+
+Once the OAuth flow completes, the connection is created and `status` becomes
+`CONNECTED`. List a company's connections to get the `connectionId` you need for syncing:
+
+```bash
+curl -X GET "https://api.sync2books.com/companies/{companyId}/connections" \
+  -H "X-API-Key: {apiKey}"
+```
+
+## Connect eTIMS (Kenya compliance)
+
+For Kenyan tax compliance, the company is connected to **eTIMS** instead of (or in
+addition to) an accounting platform. This is normally done **once, in the dashboard**
+— you enter the KRA PIN, OSCU device serial, and branch details, and Sync2Books runs
+the device onboarding for you. See [eTIMS provisioning](/etims-provisioning).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="The sync model" icon="arrows-rotate" href="/concepts/sync-model">
+    How data is pushed and how you confirm the result.
+  </Card>
+  <Card title="Get started with Expenses" icon="receipt" href="/expenses-getting-started">
+    Connect a company and sync your first expense.
+  </Card>
+</CardGroup>

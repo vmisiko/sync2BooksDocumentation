@@ -1,0 +1,85 @@
+---
+title: "The sync model"
+description: "How Sync2Books pushes data to external systems asynchronously, and how you track the result with sync batches."
+---
+
+Most write operations in Sync2Books are **asynchronous**. When you submit data —
+an expense, an eTIMS sale, a stock adjustment — Sync2Books accepts it, returns a
+**`syncBatchId`** immediately, and pushes it to the external system in the
+background. You confirm the outcome by reading the batch or the entity back.
+
+This model is shared across products: the same batch/status vocabulary applies to
+Expenses and to eTIMS.
+
+## The flow
+
+```text
+1. You submit            POST /expenses/{connectionId}      ─▶  { syncBatchId }
+2. Sync2Books pushes     (background) ──▶ QuickBooks / Xero / Sage / KRA eTIMS
+3. You confirm           GET /sync/batches/{syncBatchId}    ─▶  status + per-item results
+```
+
+A **sync batch** groups one or more **items**. Each item tracks the fate of a single
+entity (one expense, one sale) and carries the external system's response once done.
+
+## Statuses
+
+| Batch / item status | Meaning |
+|---------------------|---------|
+| `pending` | Accepted, not yet pushed. |
+| `syncing` | Currently being pushed to the external system. |
+| `synced` / `success` | Accepted by the external system; response stored. |
+| `failed` | Rejected; `syncError` explains why. |
+| `skipped` | Intentionally not synced (e.g. duplicate or filtered). |
+
+## Confirm a result
+
+```bash
+curl -X GET "https://api.sync2books.com/sync/batches/{syncBatchId}" \
+  -H "X-API-Key: {apiKey}"
+```
+
+```json
+{
+  "batch": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "completed",
+    "totalItems": 1,
+    "successfulItems": 1,
+    "failedItems": 0
+  },
+  "items": [
+    {
+      "entityId": "expense-001",
+      "entityType": "Expense",
+      "status": "success",
+      "integrationResponse": { "id": "qb-expense-id", "syncToken": "0" },
+      "syncErrorMessage": null
+    }
+  ]
+}
+```
+
+<Tip>
+Rather than polling, you can subscribe to **webhooks** to be notified when a batch
+completes. Inbound webhooks are verified with your `whsec_…` webhook secret — see
+[Authentication](/concepts/authentication).
+</Tip>
+
+## Product-specific result tracking
+
+- **Expenses** — see [Sync transactions](/expenses-sync-transactions) for status
+  handling and error recovery.
+- **eTIMS** — sales and catalog operations are async and yield a signed KRA receipt.
+  See [Tracking results](/etims-tracking-results).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Environments & base URLs" icon="server" href="/concepts/environments">
+    Development vs production.
+  </Card>
+  <Card title="Errors & rate limits" icon="triangle-exclamation" href="/concepts/errors-and-rate-limits">
+    The error shape and throttling.
+  </Card>
+</CardGroup>

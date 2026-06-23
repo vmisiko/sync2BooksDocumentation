@@ -1,0 +1,136 @@
+---
+title: "Catalog (Items)"
+description: "Before you can invoice a product through eTIMS, it must exist in the catalog and be synced to KRA. There are two distinct steps:"
+---
+
+Before you can invoice a product through eTIMS, it must exist in the **catalog** and be **synced to KRA**. There are two distinct steps:
+
+1. **Register** — add the item to your Sync2Books catalog (`POST …/catalog/items`)
+2. **Sync** — register the item with KRA eTIMS, assigning an `etimsItemCode` (`POST …/catalog/items/sync`)
+
+An item that is registered but not synced **cannot be sold**.
+
+```
+register  ──▶  item status: Pending
+   sync   ──▶  item status: Registered (eTIMS item code assigned)  ──▶  sellable
+```
+
+## Goods vs Services (stock vs non-stock)
+
+Every item is one of two types, set by `itemType` when you register it. **The type determines whether the item is stock-tracked**, which changes how sales behave:
+
+| `itemType` | Stock? | On a sale | Add stock first? |
+|-----------|--------|-----------|------------------|
+| `GOODS` | **Stock item** | inventory is **deducted** | **Yes** — a sale fails if there isn't enough on hand |
+| `SERVICE` | **Non-stock** | inventory is **untouched** | **No** — sell immediately after syncing |
+
+- **Goods** are physical, inventoried products. Selling one reduces its stock at the branch, so you must add stock before you sell, and a sale of more than you have on hand is rejected (`Insufficient stock`). Manage levels with [Stock](/etims-stock).
+- **Services** (non-stock items) are not inventoried. Sales never touch stock, so there is **no "add stock" step** — just register, sync, then sell. Stock adjust/transfer calls on a service have no effect.
+
+> **KRA item type code.** Goods default to KRA's *finished product* code and services to *service*. If you need a different classification (e.g. raw materials), set `productTypeCode` explicitly when registering.
+
+## Step 1 — Register an item
+
+```bash
+curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etims/catalog/items" \
+  -H "X-API-Key: {apiKey}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "sku-1001",
+    "name": "Maize Flour 2kg",
+    "sku": "MF-2KG",
+    "itemType": "GOODS",
+    "taxCategory": "VAT_STANDARD",
+    "classificationCode": "14111400",
+    "unitCode": "U",
+    "packagingUnitCode": "NT"
+  }'
+```
+
+```json
+{ "syncBatchId": "9f0c…" }
+```
+
+### Request body
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `externalId` | string | ✅ | **Your** stable id (SKU / accounting id). Used to correlate back |
+| `name` | string | ✅ | |
+| `itemType` | `GOODS` \| `SERVICE` | ✅ | stock vs non-stock — see [Goods vs Services](#goods-vs-services-stock-vs-non-stock) |
+| `taxCategory` | `VAT_STANDARD` \| `VAT_ZERO` \| `EXEMPT` \| `OTHER` | ✅ | |
+| `classificationCode` | string | ⚠️ | KRA item classification (`itemClsCd`) — see below |
+| `unitCode` | string | — | e.g. `U` |
+| `packagingUnitCode` | string | — | e.g. `NT` |
+| `sku` | string | — | |
+| `internalUnit`, `taxTyCd`, `productTypeCode` | string | — | optional KRA overrides |
+
+### externalId vs the item id
+
+These are **two different identifiers** and the distinction matters:
+
+- **`externalId`** — what *you* send (your SKU). Use it to find the item later.
+- **the item `id`** — what Sync2Books assigns. **Sales and stock calls reference this id**, not your `externalId`.
+
+Read the item `id` back from the catalog list (Step 3).
+
+## Classification codes
+
+⚠️ **`classificationCode` is effectively required.** KRA requires every item to carry a valid item classification code (`itemClsCd`). If you omit it and no classification mapping is pre-configured for the merchant, the register call is **rejected** (`Missing classification mapping`).
+
+Use a valid KRA classification code for the product (e.g. `14111400`), from KRA's item classification list. For the other item codes (units, packaging, tax, product type) and which ones auto-resolve, see **[Codes & Values](/etims-codes)**.
+
+## Step 2 — Sync items to eTIMS
+
+Registering only stores the item. **Syncing** registers it with KRA and assigns an `etimsItemCode`:
+
+```bash
+curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etims/catalog/items/sync" \
+  -H "X-API-Key: {apiKey}" \
+  -H "Content-Type: application/json" \
+  -d '{ "branchId": "HQ", "onlyPending": true }'
+```
+
+```json
+{ "syncBatchId": "a1b2…" }
+```
+
+### Request body
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `branchId` | string | ✅ | your branch key, e.g. `HQ` |
+| `itemIds` | string[] | — | sync only these item ids; omit to sync all |
+| `onlyPending` | boolean | — | default `true` — only items not yet registered with KRA |
+| `force` | boolean | — | default `false` — re-sync even if already registered |
+
+Once the sync completes, the item's `registrationStatus` is `REGISTERED` and it can be sold.
+
+## Step 3 — List catalog items
+
+Returns your catalog (use it to grab the item `id` and check its registration status):
+
+```bash
+curl -X GET "https://api.sync2books.com/companies/{companyId}/integrations/etims/catalog/items" \
+  -H "X-API-Key: {apiKey}"
+```
+
+Each item includes its `id`, your `externalId`, and a registration status (`PENDING` | `REGISTERED`).
+
+## Recommended flow
+
+```
+register item          → POST   …/catalog/items
+   (read back id)       → GET    …/catalog/items
+sync to eTIMS           → POST   …/catalog/items/sync   { branchId, onlyPending: true }
+   (confirm REGISTERED) → GET    …/catalog/items
+```
+
+You can register many items first, then sync them in one bulk call with `onlyPending: true`.
+
+## Read next
+
+- [Stock](/etims-stock) — add inventory so items can be sold
+- [Sales & Credit Notes](/etims-sales) — invoice a synced item
+- [Tracking Results](/etims-tracking-results) — track the `syncBatchId`
+
