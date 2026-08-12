@@ -1,0 +1,81 @@
+---
+title: Odoo FAQs
+description: Answers to common questions about the Odoo integration.
+---
+
+Answers to common questions about the Odoo integration.
+
+## General questions
+
+### What Odoo versions are supported?
+
+Verified against a self-hosted Odoo 18 instance. The underlying JSON-RPC protocol (`common.authenticate`, `object.execute_kw`) is stable across recent Odoo versions and isn't scheduled for removal until Odoo 22 (fall 2028), so earlier 16/17 installs should work too, though they haven't been explicitly tested.
+
+### Does the merchant need a paid Odoo subscription?
+
+They need a running Odoo instance with the Accounting/Invoicing app installed — the free Community edition is enough for the data types Sync2Books currently supports (customers, suppliers, chart of accounts, bills).
+
+### Can a merchant's Odoo be hosted anywhere?
+
+Yes — that's the point of collecting `url`, `database`, `username`, and `apiKey` explicitly. Unlike QuickBooks Online, Odoo isn't a single vendor-hosted API; every merchant's Odoo is its own independent server, and it can live on completely different infrastructure from Sync2Books itself. The only requirement is that Sync2Books' servers can reach the given `url` over the network.
+
+### Can I connect multiple Odoo databases?
+
+Yes. Each company in Sync2Books gets its own connection with its own `url`, `database`, `username`, and `apiKey` — there's no assumption that multiple companies share one Odoo instance.
+
+## Authentication
+
+### How does authentication work with Odoo?
+
+There's no OAuth flow. Sync2Books calls Odoo's own `common.authenticate` RPC method with the supplied credentials and creates the connection immediately if they're valid — see [Set up the Odoo integration](/integrations/odoo/odoo-setup).
+
+### Where does the merchant get their API key?
+
+From inside their own Odoo instance: **Preferences → Account Security → New API Key**. See the step-by-step screenshots in [Set up the Odoo integration](/integrations/odoo/odoo-setup).
+
+### My connection worked yesterday and fails today
+
+Almost always an expired API key. Odoo's "New API Key" dialog defaults the validity duration to **1 Day** — a merchant who didn't change this will have a key that silently expires. Generate a new key with a longer duration (or "No expiration" if offered).
+
+### I get "Odoo rejected the supplied credentials"
+
+Check, in order:
+
+1. Is the `database` name correct? (See [Set up the Odoo integration](/integrations/odoo/odoo-setup#finding-the-database-name).)
+2. Has the API key expired?
+3. Is `username` the merchant's actual login email, not a display name?
+4. Is `url` reachable from the public internet (not `localhost`, not behind an unauthenticated firewall)?
+
+## Data sync
+
+### What can I sync to Odoo today?
+
+Customers, suppliers, chart-of-accounts entries, and vendor bills. See the coverage table in [Odoo overview](/integrations/odoo/odoo-overview#supported-operations) — invoices, bill payments, expenses, tax rates, and tracking categories aren't built yet.
+
+### Why can't I create bill payments or expenses in Odoo?
+
+Both require Sync2Books to know which Odoo bank/cash **journal** to post through, which is a different concept from a chart-of-accounts account — Odoo's `account.payment` model needs a `journal_id`, not an account id. This isn't collected anywhere yet, so both operations return a deliberate `501 Not Implemented` rather than guessing. See [Odoo overview](/integrations/odoo/odoo-overview#why-bill-payments-and-expenses-arent-supported-yet).
+
+### How are suppliers different from customers in Odoo?
+
+They're not, structurally. Odoo has one contact model, `res.partner`, for both — a supplier is a partner with `supplier_rank > 0`, a customer is a partner with `customer_rank > 0`. A single Odoo contact can be both at once.
+
+### Does Odoo push changes back to Sync2Books?
+
+No. Odoo has no equivalent to QuickBooks' webhook push — inbound sync (Odoo → Sync2Books) isn't built for this connector and would require polling if added.
+
+## Troubleshooting
+
+### Connection status shows an error immediately after connecting
+
+The connect call validates credentials synchronously — if it returns `connected`, Odoo already accepted them. If it instead returns a `401`, see "I get 'Odoo rejected the supplied credentials'" above.
+
+### A sync silently fails for a supplier/account/bill
+
+Check the sync batch status — as with other integrations, failed sync items carry an error message. If the error mentions QuickBooks-shaped fields (like an OAuth token) for an Odoo connection, that's a routing bug — contact support.
+
+## Read next
+
+- [Odoo overview](/integrations/odoo/odoo-overview) - Learn about the integration
+- [Set up the Odoo integration](/integrations/odoo/odoo-setup) - Configuration guide
+- [Odoo integration reference](/integrations/odoo/odoo-reference) - API reference

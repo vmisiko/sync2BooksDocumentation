@@ -14,6 +14,15 @@ The Sync2Books Link is a pre-built UI component that handles the OAuth flow for 
 - ✅ **Customizable branding** - Use your app's logo and name
 - ✅ **Automatic token management** - Handles refresh and expiration
 
+<Note>
+This page describes the OAuth flow (QuickBooks, Xero, Sage). **Odoo doesn't use OAuth** —
+the Link modal instead shows a credentials form (URL, database, username, API key)
+directly inside the same widget. See
+[Set up the Odoo integration](/integrations/odoo/odoo-setup) for that flow specifically;
+everything else on this page (installation, `useSync2Books`, error handling) applies the
+same way regardless of which integration is selected.
+</Note>
+
 ## How Link Works
 
 ```

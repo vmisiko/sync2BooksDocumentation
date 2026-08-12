@@ -1,0 +1,189 @@
+---
+title: Odoo integration reference
+description: Complete API reference for the Odoo integration.
+---
+
+Complete API reference for the Odoo integration.
+
+## Overview
+
+This reference covers the Odoo-specific connect flow and how Sync2Books' generic entity endpoints map to Odoo models. Unlike QuickBooks Online, Odoo has no integration-specific read endpoints yet (no `GET /connections/{connectionId}/accounts` equivalent scoped to Odoo) — accounts, customers, and suppliers created _through_ Sync2Books are tracked locally and mirrored to Odoo, rather than read live from Odoo on demand.
+
+## Connect endpoint
+
+### Connect a company to Odoo
+
+Validates credentials against Odoo synchronously and creates the connection — no OAuth redirect. See [Set up the Odoo integration](/integrations/odoo/odoo-setup) for the full walkthrough.
+
+```text
+POST /companies/{companyId}/odoo/connect
+```
+
+**Body:**
+
+```json
+{
+  "url": "https://my-company.odoo.com",
+  "database": "my-company",
+  "username": "admin@example.com",
+  "apiKey": "{odoo_api_key}",
+  "connectionId": "existing-connection-uuid"
+}
+```
+
+`connectionId` is optional — include it to reconnect/update an existing connection (e.g. after the merchant rotates their API key) instead of creating a new one.
+
+**Response `201`:**
+
+```json
+{
+  "id": "connection-uuid",
+  "integrationKey": "odoo",
+  "companyId": "company-uuid",
+  "status": "connected",
+  "providerMetadata": {
+    "url": "https://my-company.odoo.com",
+    "database": "my-company",
+    "username": "admin@example.com"
+  }
+}
+```
+
+**Response `401`:** Odoo rejected the credentials — see [Odoo FAQs](/integrations/odoo/odoo-faq).
+
+## Entity endpoints
+
+These aren't Odoo-specific routes — they're the same generic entity endpoints used for every integration. Sync2Books routes to Odoo internally based on the connection's `integrationKey`.
+
+### Create a customer
+
+```text
+POST /customers/{connectionId}
+```
+
+```json
+{
+  "name": "Acme Corp",
+  "email": "billing@acme.com"
+}
+```
+
+**Response `201`** (this exact shape is what a real Odoo-connected call returns):
+
+```json
+{
+  "customer": {
+    "id": "customer-uuid",
+    "customerCode": "CUST-XXXXXXXX-XXXXXX",
+    "name": "Acme Corp",
+    "email": "billing@acme.com",
+    "syncStatus": "pending"
+  },
+  "message": "Customer created successfully and queued for sync",
+  "syncBatchId": "sync-batch-uuid",
+  "syncedToBookkeeping": false
+}
+```
+
+Creation queues a sync batch rather than syncing inline — see [Sync model](/concepts/sync-model) for how to trigger and monitor processing.
+
+### Create a supplier
+
+```text
+POST /suppliers/connection/{connectionId}
+```
+
+```json
+{
+  "supplierName": "Office Supplies Co",
+  "emailAddress": "ap@officesupplies.example"
+}
+```
+
+### Create an account
+
+```text
+POST /accounts/{connectionId}
+```
+
+```json
+{
+  "name": "Office Expenses",
+  "code": "6100",
+  "category": "Expense"
+}
+```
+
+### Create a bill
+
+```text
+POST /bills
+```
+
+```json
+{
+  "supplierRef": { "id": "supplier-uuid" },
+  "issueDate": "2026-01-15",
+  "lineItems": [
+    {
+      "description": "Consulting services",
+      "quantity": 1,
+      "unitAmount": 500,
+      "accountRef": { "id": "account-uuid" }
+    }
+  ]
+}
+```
+
+## Odoo model mapping
+
+| Sync2Books entity | Odoo model | Notes |
+| --- | --- | --- |
+| Customer | `res.partner` | Created with `customer_rank: 1` |
+| Supplier | `res.partner` | Created with `supplier_rank: 1` — same model as Customer, Odoo has no separate vendor entity |
+| Account | `account.account` | `account_type` derived from the Sync2Books account category |
+| Bill | `account.move` | `move_type: "in_invoice"`, with line items embedded as `invoice_line_ids` create-commands in a single call |
+
+### Bill → account.move mapping
+
+```json
+{
+  "move_type": "in_invoice",
+  "partner_id": 42,
+  "invoice_date": "2026-01-15",
+  "invoice_line_ids": [
+    [0, 0, {
+      "name": "Consulting services",
+      "quantity": 1,
+      "price_unit": 500,
+      "account_id": 30
+    }]
+  ]
+}
+```
+
+## Not yet supported
+
+These return `501 Not Implemented` with a clear reason, not a silent failure:
+
+| Operation | Reason |
+| --- | --- |
+| `POST /bill-payments` (Odoo connection) | Needs a resolved Odoo bank/cash journal — not collected yet |
+| `POST /expenses` (Odoo connection) | Same gap as bill payments |
+| Invoice sync (outbound) | Not built for Odoo — QuickBooks-only today |
+| Tax rates, tracking categories | Not built |
+| Attachments | Not built |
+
+## Error codes
+
+| Error Code | Description | Solution |
+| --- | --- | --- |
+| `401` (on connect) | Odoo rejected the credentials | Verify database name and that the API key hasn't expired |
+| `501` | Operation not implemented for Odoo | See "Not yet supported" above |
+| `400` | Missing required field (`url`, `database`, `username`, or `apiKey`) | All four are required on connect |
+
+## Read next
+
+- [Odoo overview](/integrations/odoo/odoo-overview) - Learn about the integration
+- [Set up the Odoo integration](/integrations/odoo/odoo-setup) - Configuration guide
+- [Odoo FAQs](/integrations/odoo/odoo-faq) - Common questions

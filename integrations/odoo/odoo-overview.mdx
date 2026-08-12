@@ -1,0 +1,76 @@
+---
+title: Odoo
+description: Learn about our Odoo integration.
+---
+
+Learn about our Odoo integration.
+
+## Overview
+
+You can synchronize accounting data with a merchant's own Odoo instance using our Odoo integration. Unlike QuickBooks Online, Odoo isn't a single hosted platform — every merchant runs their own Odoo server (self-hosted, Odoo.sh, or Odoo Online), so there's no OAuth redirect. The merchant enters their Odoo URL, database, username, and an API key directly, and Sync2Books validates them synchronously.
+
+For more details about the supported data types and operations, see [Odoo integration reference](/integrations/odoo/odoo-reference).
+
+## Set up the integration
+
+See [Set up the Odoo integration](/integrations/odoo/odoo-setup) to learn how to connect a company to Odoo.
+
+## Supported operations
+
+<Note>
+  Odoo support is newer than QuickBooks Online and covers fewer transaction types today. The table below reflects what's actually implemented, not what's planned.
+</Note>
+
+| Data type | Supported | Notes |
+| --- | --- | --- |
+| Customers | ✅ | Maps to Odoo's `res.partner` with `customer_rank > 0` |
+| Suppliers | ✅ | Maps to `res.partner` with `supplier_rank > 0` — Odoo has no separate vendor model |
+| Accounts (chart of accounts) | ✅ | Maps to `account.account` |
+| Bills | ✅ | Maps to a single `account.move` (`move_type: in_invoice`) with embedded line items |
+| Invoices (outbound, customer-facing) | ❌ | Not built yet — QuickBooks-only today |
+| Bill payments | ❌ | Requires resolving which Odoo bank/cash journal to post through — not collected yet |
+| Expenses | ❌ | Same gap as bill payments |
+| Tax rates | ❌ | Not built |
+| Tracking categories | ❌ | Not built |
+| Attachments | ❌ | Not built |
+| Inbound sync (Odoo → Sync2Books) | ❌ | Odoo has no webhook-push mechanism into Sync2Books; would require polling |
+
+## Why bill payments and expenses aren't supported yet
+
+QuickBooks has one flat list of accounts — a bank account is just a chart-of-accounts entry with `AccountType: "Bank"`, so posting a payment or expense only ever needs one kind of reference. Odoo (like Microsoft Dynamics 365 Business Central) keeps the chart of accounts and the "journal" a transaction actually posts through as two separate things — Odoo's `account.payment` model requires a `journal_id`, not a chart-of-accounts id. Nothing in the connector resolves that yet, so both operations fail with a clear, deliberate error rather than guessing at the wrong journal.
+
+## Authentication
+
+Odoo uses direct credentials, not OAuth. When connecting a company, Sync2Books validates the credentials against Odoo's own `common.authenticate` RPC call and stores the connection immediately — there's no redirect step.
+
+### Connection status
+
+Connections can have the following statuses:
+
+- **`connected`** — Connection is active and credentials were validated
+- **`disconnected`** — Connection was disconnected
+- **`pending`** — Reserved for OAuth-style integrations; Odoo connections go straight to `connected` or fail outright
+
+## Common use cases
+
+### Customer and supplier sync
+
+Push customers and suppliers created in your application into a merchant's Odoo instance as contacts, correctly flagged as customer or vendor.
+
+### Chart of accounts sync
+
+Create accounts in Odoo directly, or read Odoo's existing chart of accounts to map transactions to the right place.
+
+### Vendor bill sync
+
+Create a vendor bill in Odoo — Odoo lets this happen in a single API call, unlike Business Central's two-call header-then-lines split.
+
+## FAQs
+
+See [Odoo FAQs](/integrations/odoo/odoo-faq) for answers to common questions about the integration.
+
+## Read next
+
+- [Set up the Odoo integration](/integrations/odoo/odoo-setup) - Configure the integration
+- [Odoo integration reference](/integrations/odoo/odoo-reference) - API reference
+- [Odoo FAQs](/integrations/odoo/odoo-faq) - Common questions
