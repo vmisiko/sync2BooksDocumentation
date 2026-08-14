@@ -64,15 +64,22 @@ directly with the `authUrl`.
 
 ```bash
 # fetch an authorization URL for an existing company
-curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=QUICKBOOKS" \
+curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=quickbooks" \
   -H "X-API-Key: {apiKey}"
 ```
 
+<Note>
+The `authUrl` only carries a working `client_id` and `redirect_uri` once your
+Application has QuickBooks credentials configured — see
+[Set up the QuickBooks Online integration](/integrations/quickbooks-online/quickbooks-online-setup).
+Without that step, `authUrl` still comes back but silently fails to redirect anywhere.
+</Note>
+
 Once the OAuth flow completes, the connection is created and `status` becomes
-`CONNECTED`. List a company's connections to get the `connectionId` you need for syncing:
+`connected`. List a company's connections to get the `connectionId` you need for syncing:
 
 ```bash
-curl -X GET "https://api.sync2books.com/companies/{companyId}/connections" \
+curl -X GET "https://api.sync2books.com/connections/company/{companyId}" \
   -H "X-API-Key: {apiKey}"
 ```
 

@@ -66,10 +66,10 @@ Next, use the authorization URL returned when creating a company to connect the 
 
 | Accounting software | Integration Key |
 |---------------------|----------------|
-| QuickBooks Online | `QUICKBOOKS` |
-| QuickBooks Desktop | `QUICKBOOKS_DESKTOP` |
-| Xero | `XERO` |
-| Sage | `SAGE` |
+| QuickBooks Online | `quickbooks` |
+| QuickBooks Desktop | `quickbooks_desktop` |
+| Xero | `xero` |
+| Sage | `sage` |
 
 ### QuickBooks Online connection
 
@@ -78,7 +78,7 @@ As an example, let's create a QuickBooks Online connection. In response, the end
 #### Get authorization URL
 
 ```bash
-GET /companies/{companyId}/auth-url?integrationKey=QUICKBOOKS
+GET /companies/{companyId}/auth-url?integrationKey=quickbooks
 ```
 
 #### Response
@@ -98,23 +98,21 @@ GET /companies/{companyId}/auth-url?integrationKey=QUICKBOOKS
 #### List connections
 
 ```bash
-GET /companies/{companyId}/connections
+GET /connections/company/{companyId}
 ```
 
 #### Response
 
 ```json
-{
-  "connections": [
-    {
-      "id": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
-      "integrationKey": "QUICKBOOKS",
-      "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
-      "status": "CONNECTED",
-      "created": "2022-09-01T10:21:57.0807447Z"
-    }
-  ]
-}
+[
+  {
+    "id": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
+    "integrationKey": "quickbooks",
+    "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+    "status": "connected",
+    "created": "2022-09-01T10:21:57.0807447Z"
+  }
+]
 ```
 
 ## Connection status
@@ -123,22 +121,18 @@ Connections can have the following statuses:
 
 | Status | Description |
 |--------|-------------|
-| `CONNECTED` | Connection is active and ready to sync |
-| `DISCONNECTED` | Connection was disconnected by the user |
-| `ERROR` | Connection has an error and needs attention |
+| `connected` | Connection is active and ready to sync |
+| `disconnected` | Connection was disconnected by the user |
+| `error` | Connection has an error and needs attention |
 
 ## Deauthorize a connection
 
-If your customer wants to revoke their approval and sever the connection to their accounting software, use the Unlink connection endpoint.
+If your customer wants to revoke their approval and sever the connection to their accounting software, use the disconnect endpoint. This marks the connection `disconnected` and wipes its stored OAuth tokens.
 
 #### Request
 
 ```bash
-PATCH /companies/{companyId}/connections/{connectionId}
-
-{
-  "status": "DISCONNECTED"
-}
+POST /connections/{connectionId}/disconnect
 ```
 
 You can learn more about connection management best practices and see how you can provide this functionality in your app's UI.

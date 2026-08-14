@@ -68,23 +68,21 @@ Next, use the authorization URL returned when creating a company to connect the 
 You can also get the authorization URL for an existing company:
 
 ```bash
-curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=QUICKBOOKS" \
+curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=quickbooks" \
   -H "X-API-Key: {apiKey}"
 ```
 
 #### Response
 
 ```json
-{
-  "connections": [
-    {
-      "id": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
-      "integrationKey": "QUICKBOOKS",
-      "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
-      "status": "CONNECTED"
-    }
-  ]
-}
+[
+  {
+    "id": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
+    "integrationKey": "quickbooks",
+    "companyId": "77921ff9-2491-4dfe-b23b-ff28f3e31e4f",
+    "status": "connected"
+  }
+]
 ```
 
 ## Step 3: Configure expense mapping (optional)

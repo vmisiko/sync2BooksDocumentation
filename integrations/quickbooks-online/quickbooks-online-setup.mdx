@@ -23,7 +23,7 @@ To connect to QuickBooks Online, you need to create an app in the Intuit Develop
 4. Select **QuickBooks Online** as the product
 5. Fill in your app details:
    - **App Name**: Your application name
-   - **Redirect URI**: `https://api.sync2books.com/quickbooks/callback` (or your callback URL)
+   - **Redirect URI**: `https://api.sync2books.com/companies/quickbooks/callback` (or your callback URL)
    - **Scopes**: Select the required scopes (see below)
 6. Save your app credentials:
    - **Client ID** (App ID)
@@ -38,14 +38,33 @@ For expense management, you need the following scopes:
 
 ## Step 2: Configure your Sync2Books application
 
-1. Log in to your [Sync2Books Dashboard](https://sync2books.com/dashboard)
-2. Navigate to **Applications** → Select your application
-3. Go to **Integrations** → **QuickBooks Online**
-4. Enter your Intuit app credentials:
-   - **Client ID**: Your Intuit App ID
-   - **Client Secret**: Your Intuit App Secret
-   - **Environment**: `sandbox` (for testing) or `production` (for live)
-5. Save the configuration
+<Warning>
+This step is required before `auth-url` will work. If you skip it, `POST /companies`
+and `GET /companies/{companyId}/auth-url` still return a 200 response, but the
+`authUrl` they return is missing `client_id` and `redirect_uri` — it will silently
+fail to redirect anywhere useful. There is no error telling you credentials are
+missing, so this is the most common reason a first integration attempt gets stuck.
+</Warning>
+
+You can configure credentials from the [Sync2Books Dashboard](https://sync2books.com/dashboard)
+(**Applications** → select your application → **Integrations** → **QuickBooks Online**),
+or directly via the API:
+
+```bash
+curl -X PUT "https://api.sync2books.com/applications/{applicationId}/integrations/quickbooks/credentials" \
+  -H "X-API-Key: {apiKey}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "values": {
+      "clientId": "your-intuit-client-id",
+      "clientSecret": "your-intuit-client-secret",
+      "server": "sandbox"
+    }
+  }'
+```
+
+Use `"server": "sandbox"` while testing against an Intuit sandbox company, or
+`"production"` once you are connecting real QuickBooks Online accounts.
 
 ## Step 3: Test the connection
 
@@ -75,7 +94,7 @@ curl -X POST "https://api.sync2books.com/companies" \
 }
 
 # Get auth URL for existing company
-curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=QUICKBOOKS" \
+curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrationKey=quickbooks" \
   -H "X-API-Key: {apiKey}"
 ```
 
@@ -90,11 +109,11 @@ curl -X GET "https://api.sync2books.com/companies/{companyId}/auth-url?integrati
 ### Verify connection
 
 ```bash
-curl -X GET "https://api.sync2books.com/companies/{companyId}/connections" \
+curl -X GET "https://api.sync2books.com/connections/company/{companyId}" \
   -H "X-API-Key: {apiKey}"
 ```
 
-You should see a connection with `integrationKey: "QUICKBOOKS"` and `status: "CONNECTED"`.
+You should see a connection with `integrationKey: "quickbooks"` and `status: "connected"`.
 
 ## Sandbox vs Production
 
