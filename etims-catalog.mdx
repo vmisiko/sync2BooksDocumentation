@@ -115,7 +115,7 @@ curl -X GET "https://api.sync2books.com/companies/{companyId}/integrations/etims
   -H "X-API-Key: {apiKey}"
 ```
 
-Each item includes its `id`, your `externalId`, and a registration status (`PENDING` | `REGISTERED`).
+Each item includes its `id`, your `externalId`, and a registration status (`PENDING` | `REGISTERED` | `FAILED`). A `FAILED` item carries a reason — see [Errors & Troubleshooting](/etims-errors).
 
 ## Recommended flow
 
@@ -133,4 +133,5 @@ You can register many items first, then sync them in one bulk call with `onlyPen
 - [Stock](/etims-stock) — add inventory so items can be sold
 - [Sales & Credit Notes](/etims-sales) — invoice a synced item
 - [Tracking Results](/etims-tracking-results) — track the `syncBatchId`
+- [Errors & Troubleshooting](/etims-errors) — what a `FAILED` status means and whether to retry
 

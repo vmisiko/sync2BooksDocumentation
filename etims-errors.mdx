@@ -1,0 +1,61 @@
+---
+title: "Errors & Troubleshooting"
+description: "What a failed catalog sync or sale actually means, how to tell a data problem from a system one, and whether it's safe to retry."
+---
+
+Catalog syncs and sales are processed asynchronously (see [Tracking Results](/etims-tracking-results)) — when one fails, the failure carries a human-readable reason. This page explains how to read that reason and what to do about it.
+
+## Where to find the reason
+
+| Where | Field / location |
+|-------|-------------------|
+| Item detail (API) | `GET …/catalog/items` → each item's `lastSyncResultMsg` (and `lastSyncResultCd` when KRA returned one) |
+| Item detail (dashboard) | Item Catalog → open the item → **"Error from KRA / backend"** |
+| Sale detail (API) | `GET …/sales/{saleId}` → the rejection reason on the document |
+| Sale detail (dashboard) | Sales Invoice → open the sale |
+
+An item or sale that's `FAILED` always has a reason recorded against it — you shouldn't need to guess.
+
+## Two kinds of failure
+
+Every failure reason falls into one of two categories, and telling them apart is the first troubleshooting step:
+
+<CardGroup cols={2}>
+  <Card title="KRA / backend rejected it" icon="ban">
+    The request reached KRA (or was validated before reaching it) and was refused because of something in **your data** — a code that isn't on KRA's accepted list, a missing classification, insufficient stock. **Fix the data, then retry.**
+  </Card>
+  <Card title="It never went through" icon="wifi-off">
+    A network or system issue on the way to KRA — a timeout, a gateway error, a dropped connection. Nothing about your request was wrong. **Just retry** — Sync2Books tracks the sequencing internally, so retrying never creates duplicates.
+  </Card>
+</CardGroup>
+
+**How to tell which one you're looking at:** a rejection describes a specific problem with a specific value — often naming the field and, for code-list fields, the exact accepted values. A system-level failure reads like an infrastructure error (timeout, gateway, connection) and, where Sync2Books can identify it as such, is prefixed `retryable:`.
+
+<Tip>
+A `retryable:`-prefixed message is a promise, not just a hint: Sync2Books' internal sequence numbers (`itemCd`, `invcNo`, and similar) are held in place for these failures specifically so a retry is always safe. You will never be told to fix your data for one of these — just try again.
+</Tip>
+
+## Common failure reasons
+
+| Reason | Category | What it means | Fix |
+|--------|----------|----------------|-----|
+| `Missing classification mapping for item...` | Data | No `classificationCode` was supplied and none is pre-configured for your account | Supply a valid `classificationCode` → [Classification codes](/etims-catalog#classification-codes) |
+| `Item has not been synced to eTIMS (missing etimsItemCode)` | Data | You tried to sell (or reference) an item that's only `PENDING`, not `REGISTERED` | Sync the item first → [Catalog](/etims-catalog) |
+| `Insufficient stock: Have X, tried to deduct Y` | Data | Selling a `GOODS` item deducts stock; there isn't enough on hand | Add stock before selling → [Stock](/etims-stock) |
+| `...can only be among the following list: [...]` | Data | A code you supplied (packaging unit, quantity unit, tax type, etc.) isn't one KRA recognizes — the message lists every value KRA will accept for that field | Pick one of the listed values → [Codes & Values](/etims-codes) |
+| Any message prefixed `retryable:` | System | The request didn't complete — a timeout, connection issue, or gateway error between Sync2Books and KRA | Retry — no data changes needed |
+
+This table grows as new failure reasons are confirmed. If you hit one that isn't listed here and can't tell which category it falls into from the message alone, [contact support](mailto:support@sync2books.com) with the exact reason text.
+
+## Retrying
+
+- **Catalog items**: `POST …/catalog/items/sync` with `force: true`, or `onlyPending: true` to only retry items that aren't yet `REGISTERED` (the default).
+- **Sales**: resubmit the same sale — Sync2Books' internal idempotency means a retried sale is never double-submitted to KRA.
+
+Retrying a *data* rejection without fixing the underlying value will simply fail again with the same reason.
+
+## Read next
+
+- [Tracking Results](/etims-tracking-results) — the async model these failures surface through
+- [Codes & Values](/etims-codes) — the code lists behind most data rejections
+- [Catalog](/etims-catalog) and [Sales & Credit Notes](/etims-sales) — the operations that can fail this way

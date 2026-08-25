@@ -149,12 +149,13 @@ curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etim
 |---------|-------|-----|
 | `Item has not been synced to eTIMS (missing etimsItemCode)` | Item registered but not synced | Run catalog sync → [Catalog](/etims-catalog) |
 | `Insufficient stock: Have 0, tried to deduct N` | No inventory | Add stock → [Stock](/etims-stock) |
-| Sale not accepted | A prerequisite failed | Check the failure reason → [Tracking Results](/etims-tracking-results) |
+| Sale not accepted | A prerequisite failed | Check the failure reason → [Errors & Troubleshooting](/etims-errors) |
 | Wrong line `id` | Used `externalId` instead of the item id | Use the item `id` from Sync2Books |
 
 ## Read next
 
 - [Stock](/etims-stock) — keep inventory in sync
 - [Tracking Results](/etims-tracking-results) — know when a sale is accepted
+- [Errors & Troubleshooting](/etims-errors) — what a rejection reason means and whether to retry
 - [API Reference](/etims-api-reference#sales) — full field reference
 

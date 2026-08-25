@@ -1,0 +1,148 @@
+---
+title: "Branches"
+description: "A company can have many eTIMS branches. List, add, re-initialize, update, and remove them beyond the Headquarters branch that provisioning creates."
+---
+
+A company (taxpayer / KRA PIN) can have **many branches** — each one is its own independently-syncable OSCU device, with its own `kraBhfId`, device serial, and sync/connection status.
+
+[Provisioning](/etims-provisioning) creates exactly one branch: **Headquarters** (`kraBhfId = "00"`). Use this API to add, inspect, and manage additional branches (e.g. `"01"`, `"02"` for other stores).
+
+Most integrations with a single-location business never need this page — Headquarters is enough. Reach for it once a customer has more than one physical branch reporting to KRA.
+
+## Two ways to call this API
+
+| Style | Base path | Auth |
+|-------|-----------|------|
+| Dashboard / server-to-server | `/applications/{applicationId}/companies/{companyId}/integrations/etims/branches` | JWT bearer + `x-application-id` header (must equal the `:applicationId` in the path) |
+| Programmatic (API key) | `/companies/{companyId}/integrations/etims/branches` | `X-API-Key` (`applicationId` is derived from the key) |
+
+The API-key surface only exposes **list, add, initialize, remove, reconcile-kra-pin** — not get/update by id. Use the JWT surface (or the dashboard) for those.
+
+## Identifiers — don't mix these up
+
+Branches involve four different IDs. Two of them are both informally called "branch id" in different places, which is the easiest mistake to make:
+
+| Identifier | What it is | Where you use it |
+|------------|------------|-------------------|
+| **`branchKey`** | Your logical branch key. Defaults to `kraBhfId` unless you override it when adding the branch. **Immutable once set.** | This is the value you pass as `branchId` in every **operational** call — catalog sync, sales, stock, credit notes. See [API Reference](/etims-api-reference). |
+| **`id`** (branch UUID) | The platform's internal primary key for the branch row. | This is the value you pass as `:branchId` in the **branch-management** endpoints below (get, update, initialize, delete) — a UUID, not your `branchKey`. |
+| `kraBhfId` | KRA's own branch office id (e.g. `"00"`, `"01"`). | Informational / set once when adding the branch. Not used directly in API calls. |
+| `connectionId`, `complianceBranchId` | Internal linkage to the platform connection and the compliance service's branch record. | Informational only. |
+
+If a catalog/sales/stock call 404s with "branch not found," the most common cause is passing the branch UUID (`id`) where a `branchKey` was expected, or vice versa.
+
+## List branches
+
+```
+GET /applications/{applicationId}/companies/{companyId}/integrations/etims/branches
+GET /companies/{companyId}/integrations/etims/branches
+```
+
+Returns every branch for the company, Headquarters included.
+
+## Add a branch
+
+```bash
+curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etims/branches" \
+  -H "X-API-Key: {apiKey}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "kraBhfId": "01",
+    "dvcSrlNo": "DVC-XYZ789",
+    "displayName": "Westlands Store",
+    "branchKey": "westlands"
+  }'
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `kraBhfId` | string | ✅ | KRA branch office id. Must be unique for the company. |
+| `dvcSrlNo` | string | ✅ | OSCU device serial for this branch — used at initialize. |
+| `displayName` | string | — | Human-friendly name. |
+| `branchKey` | string | — | Overrides the key you'll use in operational calls. Defaults to `kraBhfId`. **Immutable once set.** |
+
+`kraPin` and `environment` are **not** accepted here — every branch of a taxpayer shares the Headquarters branch's PIN and environment automatically.
+
+This runs the same create-branch → OSCU-shell → initialize sequence provisioning ran for Headquarters, synchronously. Returns the new branch (`201`).
+
+**Errors:** `400` if the company hasn't been provisioned yet, or provisioning is incomplete; `409` if a branch with that `kraBhfId` already exists for the company.
+
+## Get / update a single branch
+
+*(JWT surface only.)*
+
+```
+GET   /applications/{applicationId}/companies/{companyId}/integrations/etims/branches/{branchId}
+PATCH /applications/{applicationId}/companies/{companyId}/integrations/etims/branches/{branchId}
+```
+
+`{branchId}` here is the branch **UUID** (`id`), not the `branchKey`.
+
+`PATCH` body — only mutable fields; `kraBhfId` and `branchKey` cannot be changed after creation:
+
+| Field | Type | Required |
+|-------|------|----------|
+| `displayName` | string | — |
+| `dvcSrlNo` | string | — |
+
+## Re-initialize a branch
+
+```
+POST /applications/{applicationId}/companies/{companyId}/integrations/etims/branches/{branchId}/initialize
+POST /companies/{companyId}/integrations/etims/branches/{branchId}/initialize
+```
+
+Re-runs OSCU device initialization for one branch. Use this to retry after a branch's `status` shows `failed` (e.g. the device serial was wrong, or KRA was briefly unreachable during `add`).
+
+## Remove a branch
+
+```
+DELETE /applications/{applicationId}/companies/{companyId}/integrations/etims/branches/{branchId}
+DELETE /companies/{companyId}/integrations/etims/branches/{branchId}
+```
+
+The **Headquarters branch cannot be removed** (`400`) — disconnect eTIMS for the company instead if you need to start over. Returns `{ "deleted": true }`.
+
+## Reconcile KRA PIN (one-time backfill)
+
+```
+POST /applications/{applicationId}/companies/{companyId}/integrations/etims/branches/reconcile-kra-pin
+POST /companies/{companyId}/integrations/etims/branches/reconcile-kra-pin
+```
+
+A one-time fix for companies that were connected before multi-branch support existed. No-op if the Headquarters branch already has a `kraPin` recorded. Most integrations will never need to call this.
+
+## Branch object
+
+```json
+{
+  "id": "3fa1e2b0-...",
+  "companyId": "c9d8...",
+  "connectionId": "7baba7cc-...",
+  "branchKey": "westlands",
+  "kraBhfId": "01",
+  "displayName": "Westlands Store",
+  "kraPin": "P000000045T",
+  "environment": "SANDBOX",
+  "dvcSrlNo": "DVC-XYZ789",
+  "isDefault": false,
+  "status": "connected",
+  "complianceBranchId": "b1c2...",
+  "syncError": null
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `id` | Branch UUID — used as `:branchId` in this API only. |
+| `branchKey` | Use this as `branchId` in catalog/sales/stock calls. |
+| `kraBhfId` | KRA branch office id. |
+| `isDefault` | `true` only for the Headquarters branch. |
+| `status` | `pending`, `connected`, or `failed`. |
+| `syncError` | Last onboarding/sync error, if `status` is `failed`. |
+
+## Read next
+
+- [Provisioning](/etims-provisioning) — how the Headquarters branch gets created
+- [API Reference](/etims-api-reference) — operational endpoints that consume `branchKey`
+- [Tracking Results](/etims-tracking-results) — branch `status` vs per-transaction sync status

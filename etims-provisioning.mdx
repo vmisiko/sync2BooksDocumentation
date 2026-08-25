@@ -39,30 +39,49 @@ The values you enter are issued by KRA during that business's OSCU onboarding, n
 
 For the full KRA-side process (certification, Integration Token, device initialization, sandbox vs production), see **[eTIMS as a Third-Party Integrator (OSCU)](/ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY)**.
 
-## branchId vs kraBhfId — don't mix them up
+## branchKey vs kraBhfId vs branch id — don't mix them up
 
-Two different identifiers:
+Provisioning and the branches API surface a few different identifiers for the same branch. Only one of them belongs in operational calls:
 
-- **Branch key** (`sync2booksBranchKey` / `branchId`, e.g. `HQ`) — the **logical branch key you choose**. This is what you pass as `branchId` in catalog sync, sales, and stock API calls.
-- **`kraBhfId`** (e.g. `00`) — KRA's internal branch office ID. Provided once at provision time; you do **not** use it in operational API calls.
+- **Branch key** (`sync2booksBranchKey` at provision time, `branchKey` on a branch object; e.g. `HQ`) — the **logical branch key you choose**. This is the only one you pass as `branchId` in catalog sync, sales, and stock API calls.
+- **`kraBhfId`** (e.g. `00`) — KRA's internal branch office ID. Set once when the branch is created; you do **not** use it in operational API calls.
+- **Branch id** (a UUID, called `branchId`/`defaultBranchId` in the provision response, `id` on a branch object) — the platform's internal primary key for the branch row. You use this UUID only as the `:branchId` path parameter on the [branch-management endpoints](/etims-branches) (get/update/initialize/delete a specific branch) — **never** as the `branchId` in catalog/sales/stock calls, where it will 404.
+
+If a catalog/sales/stock call fails with "branch not found," check you passed the **branch key**, not the branch UUID.
 
 ## Check provisioning status
 
-You can see a company's eTIMS status in the dashboard, or fetch it programmatically (JWT-authenticated, application-scoped):
+You can see a company's eTIMS status in the dashboard, or fetch it programmatically:
 
 ```
 GET /applications/{applicationId}/companies/{companyId}/integrations/etims/status
+```
+
+```bash
+curl -X GET "https://api.sync2books.com/applications/{applicationId}/companies/{companyId}/integrations/etims/status" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "x-application-id: {applicationId}"
 ```
 
 ```json
 {
   "status": "connected",
   "connectionId": "7baba7cc-…",
-  "details": { "...": "opaque connection response" }
+  "details": {
+    "complianceTenantId": "9c1e…",
+    "complianceBranchId": "b1c2…",
+    "environment": "SANDBOX",
+    "branchCount": 2
+  },
+  "branches": [
+    { "id": "3fa1e2b0-…", "branchKey": "HQ", "kraBhfId": "00", "isDefault": true, "status": "connected", "...": "see Branches" }
+  ]
 }
 ```
 
-`status` is `none` when the company has never been provisioned, otherwise the connection status (e.g. `connected`, `pending`).
+`status` and `connectionId` reflect the **Headquarters** branch (the primary connection). `branches` lists every branch on the company — see [Branches](/etims-branches) for the full object shape. `status` is `none` (with an empty `branches` array) when the company has never been provisioned.
+
+This endpoint is JWT-authenticated and requires an `x-application-id` header matching the `:applicationId` in the path — see [Authentication](/concepts/authentication).
 
 ## Advanced: provision via API
 
@@ -98,7 +117,9 @@ curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etim
 ```json
 {
   "connectionId": "7baba7cc-4ae0-48fd-a617-98d55a6fc008",
-  "defaultBranchId": "HQ",
+  "complianceTenantId": "9c1ef2a0-...",
+  "defaultBranchId": "b1c2d3e4-...",
+  "branchId": "3fa1e2b0-...",
   "environment": "SANDBOX",
   "initialized": true
 }
@@ -106,9 +127,15 @@ curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etim
 
 | Field | Meaning |
 |-------|---------|
-| `connectionId` | The connection id |
-| `defaultBranchId` | The branch you'll pass as `branchId` in later calls |
+| `connectionId` | The platform connection id for the Headquarters branch |
+| `complianceTenantId` | Internal compliance-service tenant id — informational |
+| `defaultBranchId` | The Headquarters branch's id on the **compliance service** side — informational, not something you pass elsewhere |
+| `branchId` | The Headquarters branch's **platform** id (UUID) — use this only as `:branchId` on the [branch-management endpoints](/etims-branches), not in catalog/sales/stock calls |
 | `initialized` | Whether the eTIMS device was initialized |
+
+<Warning>
+None of the id fields in this response are what you pass as `branchId` in catalog, sales, or stock calls — that's the **branch key** you sent as `sync2booksBranchKey` (or, if you didn't set one, it defaults to `kraBhfId`, e.g. `"00"`). See [branchKey vs kraBhfId vs branch id](#branchkey-vs-krabhfid-vs-branch-id-don-t-mix-them-up) above.
+</Warning>
 
 ## Idempotency & re-provisioning
 
@@ -125,6 +152,7 @@ curl -X POST "https://api.sync2books.com/companies/{companyId}/integrations/etim
 
 ## Read next
 
+- [Branches](/etims-branches) — add and manage branches beyond Headquarters
 - [Catalog](/etims-catalog) — register and sync the items you'll sell (API)
 - [API Reference → Provision](/etims-api-reference#provision) — full field reference
 

@@ -73,6 +73,8 @@ When it succeeds, the company shows as **Connected** and you have a **branch key
 > Where do the KRA PIN, device serial, and branch ID come from? From the business's KRA OSCU onboarding — see **[the third-party integrator guide](/ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY)**. Sandbox values are fine while developing.
 >
 > Prefer to automate onboarding for many companies? There's an optional **provisioning API** too — see [Provisioning → Advanced](/etims-provisioning#advanced-provision-via-api).
+>
+> Business has more than one physical location? Provisioning only creates the Headquarters branch — add the rest via [Branches](/etims-branches).
 
 You now have everything you need to call the API: an **API key** and a **connected company** (with its `companyId` and a `branchId`).
 
@@ -235,6 +237,7 @@ That's the full loop.
 
 - [Postman Collection](/etims-postman) — run every request in seconds
 - [Provisioning](/etims-provisioning) — the dashboard flow (and optional API)
+- [Branches](/etims-branches) — add more than one branch per company
 - [Catalog](/etims-catalog) — classification codes, the REGISTERED lifecycle
 - [Sales & Credit Notes](/etims-sales) — document states, prerequisites, receipts
 - [Stock](/etims-stock) — adjust and transfer

@@ -41,7 +41,7 @@ The signature is **optional** — if you omit both headers, the API key alone au
 ## Conventions
 
 - **Async endpoints** return `{ "syncBatchId": "<uuid>" }`. Confirm resolution via the read endpoints or dashboard sync monitoring → [Tracking Results](/etims-tracking-results).
-- **`branchId`** is your branch key (e.g. `HQ`), set when the company was connected.
+- **`branchId`** (Catalog/Sales/Stock below) is your branch **key** (e.g. `HQ`), set when the branch was created — not the branch UUID used by the [Branches](#branches) endpoints.
 - Sales/stock line items reference the **item `id`** returned by Sync2Books, not your `externalId`.
 - For valid field **codes** (tax category, units, packaging, payment, classification), see [Codes & Values](/etims-codes).
 
@@ -59,8 +59,15 @@ The signature is **optional** — if you omit both headers, the API key alone au
 | `POST` | `/companies/{companyId}/integrations/etims/stock/transfer` | async | `{ syncBatchId }` |
 | `PUT` | `/companies/{companyId}/integrations/etims/stock/adjust` | async | `{ syncBatchId }` |
 | `POST` | `/companies/{companyId}/integrations/etims/provision` | sync | connection result *(advanced)* |
+| `GET` | `/companies/{companyId}/integrations/etims/branches` | sync | branch list |
+| `POST` | `/companies/{companyId}/integrations/etims/branches` | sync | branch object |
+| `POST` | `/companies/{companyId}/integrations/etims/branches/{branchId}/initialize` | sync | branch object |
+| `DELETE` | `/companies/{companyId}/integrations/etims/branches/{branchId}` | sync | `{ deleted: true }` |
+| `POST` | `/companies/{companyId}/integrations/etims/branches/reconcile-kra-pin` | sync | `{ reconciled, kraPin }` |
 
 > Connecting a company is normally done in the **dashboard**; the `provision` endpoint is for programmatic onboarding only. See [Connecting a Company](/etims-provisioning).
+>
+> A company can have more than one branch. The endpoints above cover the API-key surface; get/update-by-id also exist on the JWT (dashboard) surface. See [Branches](/etims-branches) for the full API, including the identifier gotcha between `branchId` here (a branch UUID) and the `branchId` used in Catalog/Sales/Stock below (a branch **key**).
 
 ---
 
@@ -207,7 +214,44 @@ Returns `{ syncBatchId }`. Details: [Stock](/etims-stock).
 | `sync2booksBranchKey` | string | — |
 | `kraBhfId` | string | — |
 
-Synchronous; returns the connection result. `409` if the company is already connected. Details: [Connecting a Company](/etims-provisioning).
+Synchronous; returns `{ connectionId, complianceTenantId, defaultBranchId, branchId, environment, initialized }` — all id fields here are internal ids, **not** the `branchId` you use in Catalog/Sales/Stock below (that's `sync2booksBranchKey`, or `kraBhfId` if you didn't set one). `409` if the company is already connected. Details: [Connecting a Company](/etims-provisioning).
+
+---
+
+## Branches
+
+`branchId` in this section is a branch **UUID** (the `id` field on a branch object) — not the branch key used in Catalog/Sales/Stock. See [Branches](/etims-branches) for the full API, including the JWT/dashboard surface (which also has get-by-id and update).
+
+### List branches
+
+`GET /companies/{companyId}/integrations/etims/branches` — returns every branch for the company.
+
+### Add a branch
+
+`POST /companies/{companyId}/integrations/etims/branches`
+
+| Field | Type | Required |
+|-------|------|----------|
+| `kraBhfId` | string | ✅ |
+| `dvcSrlNo` | string | ✅ |
+| `displayName` | string | — |
+| `branchKey` | string | — defaults to `kraBhfId`; immutable once set |
+
+`kraPin`/`environment` are inherited from the Headquarters branch. Returns the new branch object (`201`). `409` if `kraBhfId` already exists for the company.
+
+### Re-initialize a branch
+
+`POST /companies/{companyId}/integrations/etims/branches/{branchId}/initialize` — retries OSCU device initialization for a `failed` branch.
+
+### Remove a branch
+
+`DELETE /companies/{companyId}/integrations/etims/branches/{branchId}` — `400` if this is the Headquarters branch.
+
+### Reconcile KRA PIN
+
+`POST /companies/{companyId}/integrations/etims/branches/reconcile-kra-pin` — one-time backfill fix; no-op if already set.
+
+Details: [Branches](/etims-branches).
 
 ## Enums
 

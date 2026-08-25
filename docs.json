@@ -48,10 +48,12 @@
               "etims-overview",
               "etims-getting-started",
               "etims-provisioning",
+              "etims-branches",
               "etims-catalog",
               "etims-sales",
               "etims-stock",
               "etims-tracking-results",
+              "etims-errors",
               "etims-codes",
               "etims-postman",
               "ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY"
