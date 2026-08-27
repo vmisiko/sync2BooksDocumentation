@@ -11,13 +11,14 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Guides",
         "groups": [
           {
             "group": "Get started",
             "pages": [
               "index",
-              "quickstart"
+              "quickstart",
+              "which-api"
             ]
           },
           {
@@ -31,7 +32,7 @@
             ]
           },
           {
-            "group": "Expenses",
+            "group": "Accounting API — Expenses",
             "pages": [
               "expenses-overview",
               "expenses-getting-started",
@@ -43,7 +44,20 @@
             ]
           },
           {
-            "group": "eTIMS compliance (Kenya)",
+            "group": "Accounting API — Connected systems",
+            "pages": [
+              "integrations/quickbooks-online/quickbooks-online-overview",
+              "integrations/quickbooks-online/quickbooks-online-setup",
+              "integrations/quickbooks-online/quickbooks-online-faq",
+              "integrations/quickbooks-online/quickbooks-online-reference",
+              "integrations/odoo/odoo-overview",
+              "integrations/odoo/odoo-setup",
+              "integrations/odoo/odoo-faq",
+              "integrations/odoo/odoo-reference"
+            ]
+          },
+          {
+            "group": "Compliance API — eTIMS (Kenya)",
             "pages": [
               "etims-overview",
               "etims-getting-started",
@@ -60,19 +74,6 @@
             ]
           },
           {
-            "group": "Accounting integrations",
-            "pages": [
-              "integrations/quickbooks-online/quickbooks-online-overview",
-              "integrations/quickbooks-online/quickbooks-online-setup",
-              "integrations/quickbooks-online/quickbooks-online-faq",
-              "integrations/quickbooks-online/quickbooks-online-reference",
-              "integrations/odoo/odoo-overview",
-              "integrations/odoo/odoo-setup",
-              "integrations/odoo/odoo-faq",
-              "integrations/odoo/odoo-reference"
-            ]
-          },
-          {
             "group": "Link component",
             "pages": [
               "link-integration"
@@ -81,14 +82,28 @@
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Accounting API",
         "groups": [
           {
-            "group": "Reference",
-            "pages": [
-              "api-reference",
-              "etims-api-reference"
-            ]
+            "group": "Overview",
+            "pages": ["api-reference"]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": "/openapi/accounting.json"
+          }
+        ]
+      },
+      {
+        "tab": "Compliance API",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["etims-api-reference"]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": "/openapi/etims.json"
           }
         ]
       }
@@ -105,8 +120,8 @@
         "href": "mailto:support@sync2books.com"
       },
       {
-        "label": "Interactive API",
-        "href": "https://api.sync2books.com/api"
+        "label": "Status",
+        "href": "https://status.sync2books.com"
       }
     ],
     "primary": {

@@ -1,0 +1,797 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sync2Books Accounting API",
+    "version": "1.0.0",
+    "description": "Write categorized expenses, bills, invoices, and payments to your customers' accounting systems (QuickBooks Online, Xero, Sage, Dynamics 365 Business Central, Odoo) through one API.\n\nThis is a **separate product** from the [Sync2Books Compliance API (eTIMS)](/etims-overview) — use this one to sync bookkeeping data to an accounting system; use that one for KRA tax compliance in Kenya. A company can use either, both, or neither.\n\nWrites are **asynchronous**: most create endpoints queue the record and return a `syncBatchId` you confirm via the [Sync](#tag/Sync) endpoints — see [The sync model](/concepts/sync-model)."
+  },
+  "servers": [
+    { "url": "https://api.sync2books.com", "description": "Production" },
+    { "url": "https://sandbox-api.sync2books.com", "description": "Sandbox (coming soon)" }
+  ],
+  "security": [{ "ApiKeyAuth": [] }],
+  "tags": [
+    { "name": "Companies", "description": "Your customers — the entities you sync data for." },
+    { "name": "Expenses", "description": "Categorized expenses, receipts, and payments." },
+    { "name": "Bills", "description": "Accounts-payable documents (money you owe suppliers)." },
+    { "name": "Invoices", "description": "Accounts-receivable documents (money customers owe you)." },
+    { "name": "Bill Payments", "description": "Payments applied against one or more bills." },
+    { "name": "Attachments", "description": "Receipts and supporting documents on a synced transaction." },
+    { "name": "Sync", "description": "Track and retry the asynchronous batches every write creates." }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Your application's API key (`sk_development_…` or `sk_production_…`). An optional `X-Signature` / `X-Timestamp` HMAC pair may additionally be sent for stronger security — see [Authentication](/concepts/authentication)."
+      }
+    },
+    "parameters": {
+      "ConnectionId": { "name": "connectionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "The connection to the accounting system to write through." }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer", "example": 400 },
+          "message": { "type": "string", "example": "Validation failed" },
+          "error": { "type": "string", "example": "Bad Request" }
+        }
+      },
+      "IntegrationKeyType": {
+        "type": "string",
+        "enum": ["quickbooks", "xero", "sage", "microsoft-dynamics-365-business-central", "odoo", "etims", "opera"],
+        "description": "`etims` connections are managed through the separate [Compliance API](/etims-overview), not this one."
+      },
+      "Money": { "type": "number", "description": "Decimal amount in the document's `currency`." },
+      "Ref": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+      },
+      "SyncBatchAccepted": {
+        "type": "object",
+        "description": "Returned by asynchronous write operations. Confirm the outcome via [Sync](#tag/Sync).",
+        "properties": { "syncBatchId": { "type": "string", "format": "uuid" } },
+        "required": ["syncBatchId"]
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateCompanyRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": { "name": { "type": "string", "example": "Acme Corporation" } }
+      },
+      "UpdateCompanyRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Acme Corporation Ltd" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "ExpenseLineItem": {
+        "type": "object",
+        "required": ["netAmount", "taxAmount", "taxRateRef", "accountRef"],
+        "properties": {
+          "netAmount": { "$ref": "#/components/schemas/Money" },
+          "taxAmount": { "$ref": "#/components/schemas/Money" },
+          "taxRateRef": { "$ref": "#/components/schemas/Ref" },
+          "accountRef": { "$ref": "#/components/schemas/Ref" },
+          "trackingRefs": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "dataType": { "type": "string" } } } },
+          "invoiceTo": { "type": "object", "properties": { "id": { "type": "string" }, "type": { "type": "string" } } }
+        }
+      },
+      "CreateExpenseRequest": {
+        "type": "object",
+        "required": ["id", "type", "issueDate", "currency", "currencyRate", "merchantName", "lines"],
+        "properties": {
+          "id": { "type": "string", "description": "Your own identifier for this expense." },
+          "type": { "type": "string", "example": "Payment" },
+          "issueDate": { "type": "string", "format": "date-time" },
+          "currency": { "type": "string", "example": "USD" },
+          "currencyRate": { "type": "number" },
+          "contactRef": { "type": "object", "properties": { "id": { "type": "string" }, "type": { "type": "string" } } },
+          "bankAccountRef": { "$ref": "#/components/schemas/Ref" },
+          "merchantName": { "type": "string" },
+          "lines": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ExpenseLineItem" } },
+          "notes": { "type": "string" },
+          "postAsDraft": { "type": "boolean", "default": false }
+        }
+      },
+      "PartyRef": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+      },
+      "BillStatus": { "type": "string", "enum": ["Unknown", "Open", "PartiallyPaid", "Paid", "Void", "Draft"] },
+      "InvoiceStatus": { "type": "string", "enum": ["Unknown", "Draft", "Open", "PartiallyPaid", "Paid", "Void", "Overdue"] },
+      "BillLineItem": {
+        "type": "object",
+        "required": ["unitAmount", "quantity", "isDirectCost"],
+        "properties": {
+          "lineNumber": { "type": "integer" },
+          "description": { "type": "string" },
+          "unitAmount": { "$ref": "#/components/schemas/Money" },
+          "quantity": { "type": "number", "minimum": 1 },
+          "unitOfMeasurement": { "type": "string" },
+          "discountAmount": { "$ref": "#/components/schemas/Money" },
+          "discountPercentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "subTotal": { "$ref": "#/components/schemas/Money" },
+          "taxAmount": { "$ref": "#/components/schemas/Money" },
+          "totalAmount": { "$ref": "#/components/schemas/Money" },
+          "accountRef": { "$ref": "#/components/schemas/Ref" },
+          "taxRateRef": { "$ref": "#/components/schemas/Ref" },
+          "itemRef": { "$ref": "#/components/schemas/Ref" },
+          "trackingCategoryRefs": { "type": "array", "items": { "$ref": "#/components/schemas/Ref" } },
+          "isDirectCost": { "type": "boolean" }
+        }
+      },
+      "CreateBillRequest": {
+        "type": "object",
+        "required": ["supplierRef", "issueDate", "currency", "subTotal", "taxAmount", "totalAmount", "lineItems", "status"],
+        "properties": {
+          "billCode": { "type": "string" },
+          "reference": { "type": "string" },
+          "supplierRef": { "$ref": "#/components/schemas/PartyRef" },
+          "purchaseOrderRefs": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "purchaseOrderNumber": { "type": "string" } } } },
+          "issueDate": { "type": "string", "format": "date" },
+          "dueDate": { "type": "string", "format": "date" },
+          "currency": { "type": "string" },
+          "currencyRate": { "type": "number", "minimum": 0.0001 },
+          "subTotal": { "$ref": "#/components/schemas/Money" },
+          "taxAmount": { "$ref": "#/components/schemas/Money" },
+          "totalAmount": { "$ref": "#/components/schemas/Money" },
+          "amountDue": { "$ref": "#/components/schemas/Money" },
+          "lineItems": { "type": "array", "items": { "$ref": "#/components/schemas/BillLineItem" } },
+          "note": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/BillStatus" },
+          "withholdingTax": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "amount": { "type": "number" } } } }
+        }
+      },
+      "UpdateBillRequest": { "allOf": [{ "$ref": "#/components/schemas/CreateBillRequest" }], "description": "Every field is optional on update." },
+      "Bill": {
+        "allOf": [
+          { "$ref": "#/components/schemas/CreateBillRequest" },
+          { "type": "object", "properties": { "id": { "type": "string" }, "connectionId": { "type": "string" }, "syncStatus": { "type": "string", "enum": ["pending", "syncing", "synced", "failed"] }, "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "BillListResponse": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Bill" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalPages": { "type": "integer" },
+          "hasNextPage": { "type": "boolean" },
+          "hasPreviousPage": { "type": "boolean" }
+        }
+      },
+      "InvoiceLineItem": {
+        "type": "object",
+        "required": ["unitAmount", "quantity"],
+        "properties": {
+          "lineNumber": { "type": "integer" },
+          "description": { "type": "string" },
+          "unitAmount": { "$ref": "#/components/schemas/Money" },
+          "quantity": { "type": "number", "minimum": 0.0001 },
+          "unitOfMeasurement": { "type": "string" },
+          "discountAmount": { "$ref": "#/components/schemas/Money" },
+          "discountPercentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "subTotal": { "$ref": "#/components/schemas/Money" },
+          "taxAmount": { "$ref": "#/components/schemas/Money" },
+          "totalAmount": { "$ref": "#/components/schemas/Money" },
+          "accountRef": { "$ref": "#/components/schemas/Ref" },
+          "taxRateRef": { "$ref": "#/components/schemas/Ref" },
+          "itemRef": { "$ref": "#/components/schemas/Ref" },
+          "trackingCategoryRefs": { "type": "array", "items": { "$ref": "#/components/schemas/Ref" } }
+        }
+      },
+      "CreateInvoiceRequest": {
+        "type": "object",
+        "required": ["customerRef", "issueDate", "currency", "subTotal", "taxAmount", "totalAmount", "lineItems", "status"],
+        "properties": {
+          "invoiceCode": { "type": "string" },
+          "reference": { "type": "string" },
+          "customerRef": { "$ref": "#/components/schemas/PartyRef" },
+          "issueDate": { "type": "string", "format": "date" },
+          "dueDate": { "type": "string", "format": "date" },
+          "currency": { "type": "string" },
+          "currencyRate": { "type": "number", "minimum": 0.0001 },
+          "subTotal": { "$ref": "#/components/schemas/Money" },
+          "taxAmount": { "$ref": "#/components/schemas/Money" },
+          "totalAmount": { "$ref": "#/components/schemas/Money" },
+          "amountDue": { "$ref": "#/components/schemas/Money" },
+          "lineItems": { "type": "array", "items": { "$ref": "#/components/schemas/InvoiceLineItem" } },
+          "note": { "type": "string" },
+          "customerMemo": { "type": "string" },
+          "billEmail": { "type": "string", "format": "email" },
+          "status": { "$ref": "#/components/schemas/InvoiceStatus" }
+        }
+      },
+      "UpdateInvoiceRequest": { "allOf": [{ "$ref": "#/components/schemas/CreateInvoiceRequest" }], "description": "Every field is optional on update." },
+      "Invoice": {
+        "allOf": [
+          { "$ref": "#/components/schemas/CreateInvoiceRequest" },
+          { "type": "object", "properties": {
+            "id": { "type": "string" },
+            "connectionId": { "type": "string" },
+            "syncStatus": { "type": "string", "enum": ["pending", "syncing", "synced", "failed"] },
+            "etimsReceiptAvailable": { "type": "boolean", "description": "Whether a KRA-signed receipt PDF exists for this invoice — see [Sales & Credit Notes](/etims-sales) if this company also uses the Compliance API." },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          } }
+        ]
+      },
+      "InvoiceListResponse": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Invoice" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalPages": { "type": "integer" },
+          "hasNextPage": { "type": "boolean" },
+          "hasPreviousPage": { "type": "boolean" }
+        }
+      },
+      "CreateBillPaymentRequest": {
+        "type": "object",
+        "required": ["supplierRef", "accountRef", "totalAmount", "currency", "date"],
+        "properties": {
+          "billPaymentCode": { "type": "string" },
+          "supplierRef": { "$ref": "#/components/schemas/PartyRef" },
+          "accountRef": { "type": "object", "required": ["id", "name"], "properties": { "id": { "type": "string" }, "name": { "type": "string" } } },
+          "totalAmount": { "$ref": "#/components/schemas/Money" },
+          "currency": { "type": "string" },
+          "currencyRate": { "type": "number", "minimum": 0.0001 },
+          "date": { "type": "string", "format": "date" },
+          "note": { "type": "string" },
+          "paymentMethodRef": { "$ref": "#/components/schemas/Ref" },
+          "billRef": { "type": "object", "properties": { "id": { "type": "string" }, "billCode": { "type": "string" } } },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["amount", "allocatedOnDate"],
+              "properties": {
+                "amount": { "$ref": "#/components/schemas/Money" },
+                "allocatedOnDate": { "type": "string", "format": "date" },
+                "reference": { "type": "string" },
+                "links": { "type": "array", "items": { "type": "object", "properties": { "billId": { "type": "string" }, "amount": { "$ref": "#/components/schemas/Money" } } } }
+              }
+            }
+          }
+        }
+      },
+      "UpdateBillPaymentRequest": { "allOf": [{ "$ref": "#/components/schemas/CreateBillPaymentRequest" }], "description": "Every field is optional on update." },
+      "BillPayment": {
+        "allOf": [
+          { "$ref": "#/components/schemas/CreateBillPaymentRequest" },
+          { "type": "object", "properties": { "id": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "BillPaymentListResponse": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/BillPayment" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalPages": { "type": "integer" },
+          "hasNextPage": { "type": "boolean" },
+          "hasPreviousPage": { "type": "boolean" }
+        }
+      },
+      "SyncBatchSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed", "partially_completed"] },
+          "totalItems": { "type": "integer" },
+          "syncedItems": { "type": "integer" },
+          "failedItems": { "type": "integer" },
+          "pendingItems": { "type": "integer" },
+          "syncingItems": { "type": "integer" },
+          "syncErrorMessage": { "type": ["string", "null"] },
+          "startedAt": { "type": ["string", "null"], "format": "date-time" },
+          "completedAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SyncItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "entityId": { "type": "string" },
+          "entityType": { "type": "string", "enum": ["expense", "invoice", "bill", "bill-payment", "customer", "supplier", "tax-rate", "tax-code", "payment-method", "tracking-category", "account", "item", "etims-compliance"] },
+          "companyId": { "type": "string" },
+          "source": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "syncing", "synced", "failed", "skipped"] },
+          "syncErrorMessage": { "type": ["string", "null"] },
+          "syncedAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SyncBatchStatus": {
+        "type": "object",
+        "properties": {
+          "batch": { "$ref": "#/components/schemas/SyncBatchSummary" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/SyncItem" } }
+        }
+      },
+      "SyncBatchListItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed", "partially_completed"] },
+          "totalItems": { "type": "integer" },
+          "syncedItems": { "type": "integer" },
+          "failedItems": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "connectionId": { "type": "string" },
+          "companyId": { "type": "string" },
+          "destination": { "$ref": "#/components/schemas/IntegrationKeyType" },
+          "source": { "type": ["string", "null"] }
+        }
+      },
+      "SyncBatchListPaged": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/SyncBatchListItem" } },
+          "total": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "offset": { "type": "integer" }
+        }
+      },
+      "RetryResult": {
+        "type": "object",
+        "properties": {
+          "retriedCount": { "type": "integer" },
+          "successCount": { "type": "integer" },
+          "failedCount": { "type": "integer" },
+          "message": { "type": "string" }
+        }
+      },
+      "RetrySyncItemsRequest": {
+        "type": "object",
+        "required": ["syncItemIds"],
+        "properties": { "syncItemIds": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string" } } }
+      }
+    }
+  },
+  "paths": {
+    "/companies": {
+      "post": {
+        "tags": ["Companies"],
+        "summary": "Create a company",
+        "description": "A company represents your SMB customer. The response includes an `authUrl` to connect an accounting system — see [Companies & connections](/concepts/companies-and-connections).",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCompanyRequest" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "type": "object", "properties": { "company": { "$ref": "#/components/schemas/Company" }, "authUrl": { "type": "string" } } } } } },
+          "500": { "description": "Error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Companies"],
+        "summary": "List companies",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Company" } } } } } }
+      }
+    },
+    "/companies/{id}": {
+      "get": {
+        "tags": ["Companies"],
+        "summary": "Get a company",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Company" } } } }, "404": { "description": "Not found" } }
+      },
+      "put": {
+        "tags": ["Companies"],
+        "summary": "Update a company",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateCompanyRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Company" } } } }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "tags": ["Companies"],
+        "summary": "Deactivate a company",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Deactivated" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/companies/{companyId}/auth-url": {
+      "get": {
+        "tags": ["Companies"],
+        "summary": "Get an OAuth authorization URL",
+        "description": "Build a URL that starts the OAuth flow for a given accounting system. Used by the [Link component](/link-integration) — you rarely need to build this by hand.",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "integrationKey", "in": "query", "required": true, "schema": { "$ref": "#/components/schemas/IntegrationKeyType" } },
+          { "name": "connectionId", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Pass to re-authenticate an existing connection." }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "authUrl": { "type": "string" } } } } } } }
+      }
+    },
+    "/companies/{companyId}/odoo/connect": {
+      "post": {
+        "tags": ["Companies"],
+        "summary": "Connect a company to Odoo",
+        "description": "Odoo has no OAuth flow — credentials are validated synchronously against the Odoo instance.",
+        "parameters": [{ "name": "companyId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["url", "database", "username", "apiKey"],
+            "properties": {
+              "url": { "type": "string", "format": "uri", "description": "Your Odoo instance URL." },
+              "database": { "type": "string" },
+              "username": { "type": "string" },
+              "apiKey": { "type": "string" },
+              "connectionId": { "type": "string", "description": "Pass to re-authenticate an existing connection." }
+            }
+          } } }
+        },
+        "responses": {
+          "201": { "description": "Connected" },
+          "401": { "description": "Odoo rejected the credentials", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/expenses/{connectionId}": {
+      "post": {
+        "tags": ["Expenses"],
+        "summary": "Create expenses and queue for sync",
+        "description": "Always takes an array, even for a single expense.",
+        "parameters": [{ "$ref": "#/components/parameters/ConnectionId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/CreateExpenseRequest" } } } } },
+        "responses": {
+          "201": { "description": "Queued", "content": { "application/json": { "schema": { "type": "object", "properties": { "syncBatchId": { "type": "string", "format": "uuid" }, "totalExpenses": { "type": "integer" } } } } } }
+        }
+      }
+    },
+    "/expenses/{expenseId}": {
+      "get": { "tags": ["Expenses"], "summary": "Get an expense", "parameters": [{ "name": "expenseId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } } }
+    },
+    "/expenses/company/{companyId}": {
+      "get": { "tags": ["Expenses"], "summary": "List expenses for a company", "parameters": [{ "name": "companyId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/expenses/connection/{connectionId}": {
+      "get": { "tags": ["Expenses"], "summary": "List expenses for a connection", "parameters": [{ "$ref": "#/components/parameters/ConnectionId" }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/bills/{connectionId}": {
+      "post": {
+        "tags": ["Bills"],
+        "summary": "Create a bill",
+        "parameters": [
+          { "$ref": "#/components/parameters/ConnectionId" },
+          { "name": "awaitSync", "in": "query", "schema": { "type": "boolean" }, "description": "Wait for the ERP write to complete before responding, instead of just queuing it." }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateBillRequest" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bill" } } } },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/bills/with-payment/{connectionId}": {
+      "post": {
+        "tags": ["Bills"],
+        "summary": "Create a bill and its payment together",
+        "parameters": [{ "$ref": "#/components/parameters/ConnectionId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateBillRequest" } } } },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "bill": { "type": "object" },
+                "billPayment": { "type": "object" },
+                "message": { "type": "string" },
+                "billSynced": { "type": "boolean" },
+                "paymentSynced": { "type": "boolean" },
+                "warning": { "type": "string" }
+              }
+            } } }
+          }
+        }
+      }
+    },
+    "/bills": {
+      "get": {
+        "tags": ["Bills"],
+        "summary": "List bills",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "$ref": "#/components/schemas/BillStatus" } },
+          { "name": "supplierId", "in": "query", "schema": { "type": "string" } },
+          { "name": "currency", "in": "query", "schema": { "type": "string" } },
+          { "name": "minAmount", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxAmount", "in": "query", "schema": { "type": "number" } },
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Issue date range start." },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "dueStartDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "dueEndDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "purchaseOrderId", "in": "query", "schema": { "type": "string" } },
+          { "name": "purchaseOrderNumber", "in": "query", "schema": { "type": "string" } },
+          { "name": "syncStatus", "in": "query", "schema": { "type": "string", "enum": ["pending", "syncing", "synced", "failed"] } },
+          { "name": "overdueOnly", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["issueDate", "dueDate", "totalAmount", "createdAt", "updatedAt"] } },
+          { "name": "sortOrder", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillListResponse" } } } } }
+      }
+    },
+    "/bills/{id}": {
+      "put": {
+        "tags": ["Bills"],
+        "summary": "Update a bill",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateBillRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bill" } } } }, "404": { "description": "Not found" } }
+      }
+    },
+    "/invoices/{connectionId}": {
+      "post": {
+        "tags": ["Invoices"],
+        "summary": "Create an invoice",
+        "parameters": [{ "$ref": "#/components/parameters/ConnectionId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateInvoiceRequest" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Invoice" } } } },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Connection not found" }
+        }
+      }
+    },
+    "/invoices": {
+      "get": {
+        "tags": ["Invoices"],
+        "summary": "List invoices",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "$ref": "#/components/schemas/InvoiceStatus" } },
+          { "name": "customerId", "in": "query", "schema": { "type": "string" } },
+          { "name": "currency", "in": "query", "schema": { "type": "string" } },
+          { "name": "minAmount", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxAmount", "in": "query", "schema": { "type": "number" } },
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "syncStatus", "in": "query", "schema": { "type": "string", "enum": ["pending", "syncing", "synced", "failed"] } },
+          { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["issueDate", "dueDate", "totalAmount", "createdAt", "updatedAt"] } },
+          { "name": "sortOrder", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } },
+          { "name": "includeSupplementalData", "in": "query", "schema": { "type": "boolean" }, "description": "Include a curated raw-ERP-payload passthrough (`supplementalData`) on each row." }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InvoiceListResponse" } } } } }
+      }
+    },
+    "/invoices/{invoiceId}": {
+      "get": {
+        "tags": ["Invoices"],
+        "summary": "Get an invoice",
+        "parameters": [{ "name": "invoiceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Invoice" } } } }, "404": { "description": "Not found" } }
+      },
+      "put": {
+        "tags": ["Invoices"],
+        "summary": "Update an invoice",
+        "parameters": [{ "name": "invoiceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateInvoiceRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Invoice" } } } }, "400": { "description": "Validation error" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/invoices/{invoiceId}/etims-receipt": {
+      "get": {
+        "tags": ["Invoices"],
+        "summary": "Download the KRA-signed receipt for an invoice",
+        "description": "Only available if this company also uses the [Compliance API](/etims-overview) and the invoice's matching sale was accepted by KRA. Returns a PDF stream.",
+        "parameters": [{ "name": "invoiceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "PDF", "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } },
+          "404": { "description": "No receipt yet" }
+        }
+      }
+    },
+    "/invoices/{invoiceId}/void": {
+      "post": {
+        "tags": ["Invoices"],
+        "summary": "Void an invoice",
+        "parameters": [{ "name": "invoiceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Voided" }, "400": { "description": "Not yet synced to the accounting system" } }
+      }
+    },
+    "/invoices/connection/{connectionId}/sync-from-bookkeeping": {
+      "post": {
+        "tags": ["Invoices"],
+        "summary": "Pull invoices from the accounting system",
+        "description": "Reconciles invoices that were created or changed directly in the connected accounting system.",
+        "parameters": [{ "$ref": "#/components/parameters/ConnectionId" }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/bill-payments/{connectionId}": {
+      "post": {
+        "tags": ["Bill Payments"],
+        "summary": "Create a bill payment",
+        "parameters": [{ "$ref": "#/components/parameters/ConnectionId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateBillPaymentRequest" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillPayment" } } } }, "400": { "description": "Validation error" } }
+      }
+    },
+    "/bill-payments": {
+      "get": {
+        "tags": ["Bill Payments"],
+        "summary": "List bill payments",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "maximum": 100 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "paymentMethod", "in": "query", "schema": { "type": "string", "enum": ["cash", "check", "bank_transfer", "credit_card", "other"] } },
+          { "name": "currency", "in": "query", "schema": { "type": "string" } },
+          { "name": "minAmount", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxAmount", "in": "query", "schema": { "type": "number" } },
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "billId", "in": "query", "schema": { "type": "string" } },
+          { "name": "vendorId", "in": "query", "schema": { "type": "string" } },
+          { "name": "syncStatus", "in": "query", "schema": { "type": "string", "enum": ["pending", "syncing", "synced", "failed"] } },
+          { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["paymentDate", "totalAmount", "createdAt", "updatedAt"] } },
+          { "name": "sortOrder", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillPaymentListResponse" } } } } }
+      }
+    },
+    "/bill-payments/{id}": {
+      "put": {
+        "tags": ["Bill Payments"],
+        "summary": "Update a bill payment",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateBillPaymentRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillPayment" } } } }, "404": { "description": "Not found" } }
+      }
+    },
+    "/connections/{connectionId}/syncs/{syncId}/transactions/{transactionId}/attachments": {
+      "post": {
+        "tags": ["Attachments"],
+        "summary": "Upload an attachment",
+        "description": "Attaches a receipt or supporting document to an already-synced transaction. Max 10MB; accepts jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, txt, csv.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ConnectionId" },
+          { "name": "syncId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "transactionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "note": { "type": "string" },
+                  "includeOnSend": { "type": "boolean", "description": "Whether to include this attachment when the document is sent/emailed from the accounting system." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Uploaded" },
+          "400": { "description": "Invalid file, or the transaction isn't synced yet" },
+          "404": { "description": "Connection, sync, or transaction not found" }
+        }
+      }
+    },
+    "/sync/batches/{syncBatchId}": {
+      "get": {
+        "tags": ["Sync"],
+        "summary": "Get sync batch status",
+        "parameters": [{ "name": "syncBatchId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncBatchStatus" } } } }, "404": { "description": "Not found" } }
+      }
+    },
+    "/sync/companies/{companyId}/batches": {
+      "get": {
+        "tags": ["Sync"],
+        "summary": "List sync batches for a company",
+        "description": "Pagination is returned in the `X-Total-Count`, `X-Page-Count`, `X-Limit`, `X-Offset` response headers. Prefer the `/paged` variant if you'd rather have it in the body.",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed", "partially_completed"] } },
+          { "name": "destination", "in": "query", "schema": { "$ref": "#/components/schemas/IntegrationKeyType" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Search by batch id, company name, or destination." },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0 } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SyncBatchListItem" } } } } } }
+      }
+    },
+    "/sync/companies/{companyId}/batches/paged": {
+      "get": {
+        "tags": ["Sync"],
+        "summary": "List sync batches for a company (paged body)",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed", "partially_completed"] } },
+          { "name": "destination", "in": "query", "schema": { "$ref": "#/components/schemas/IntegrationKeyType" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0 } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncBatchListPaged" } } } } }
+      }
+    },
+    "/sync/batches/{syncBatchId}/process": {
+      "post": {
+        "tags": ["Sync"],
+        "summary": "Process a sync batch",
+        "parameters": [{ "name": "syncBatchId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" } } } } } } }
+      }
+    },
+    "/sync/batches/{syncBatchId}/failed-items": {
+      "get": {
+        "tags": ["Sync"],
+        "summary": "List failed items in a batch",
+        "parameters": [{ "name": "syncBatchId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SyncItem" } } } } } }
+      }
+    },
+    "/sync/items/{syncItemId}": {
+      "get": {
+        "tags": ["Sync"],
+        "summary": "Get a sync item",
+        "description": "Entity-type-agnostic — works for expenses, bills, invoices, and every other synced entity.",
+        "parameters": [{ "name": "syncItemId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncItem" } } } }, "404": { "description": "Not found" } }
+      }
+    },
+    "/sync/items/{syncItemId}/retry": {
+      "post": {
+        "tags": ["Sync"],
+        "summary": "Retry a failed sync item",
+        "parameters": [{ "name": "syncItemId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncItem" } } } } }
+      }
+    },
+    "/sync/batches/{syncBatchId}/retry-failed": {
+      "post": {
+        "tags": ["Sync"],
+        "summary": "Retry all failed items in a batch",
+        "parameters": [{ "name": "syncBatchId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RetryResult" } } } } }
+      }
+    },
+    "/sync/items/retry": {
+      "post": {
+        "tags": ["Sync"],
+        "summary": "Retry specific sync items",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RetrySyncItemsRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RetryResult" } } } } }
+      }
+    }
+  }
+}

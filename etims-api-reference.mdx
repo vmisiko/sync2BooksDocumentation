@@ -1,34 +1,35 @@
 ---
-title: "eTIMS API Reference"
-description: "Complete reference for the eTIMS endpoints on the Sync2Books API. All endpoints are authenticated with your API key and scoped to a company:"
+title: "Compliance API Overview"
+description: "Register items, manage stock, and issue KRA-signed sales and credit notes. The endpoints below are interactive — set your API key and call them from the browser."
 ---
 
-Complete reference for the eTIMS endpoints on the Sync2Books API. All endpoints are authenticated with your **API key** and scoped to a company:
+The Compliance API connects your invoicing to **KRA eTIMS** — register a catalog, manage stock, and turn a sale into a KRA-signed receipt, without building the OSCU device protocol yourself.
+
+<Note>
+This is a **separate product** from the [Accounting API](/api-reference), which syncs bookkeeping data to accounting systems. See [Which API do I need?](/which-api) if you're not sure which applies to you. They share the same authentication and base URL, but nothing else.
+</Note>
+
+## Base URL & authentication
+
+All endpoints are scoped to a company: `/companies/{companyId}/integrations/etims/…`
+
+- **Production**: `https://api.sync2books.com`
+- **Sandbox**: `https://sandbox-api.sync2books.com` (coming soon)
 
 ```
-/companies/{companyId}/integrations/etims/…
-```
-
-Base URL: `https://api.sync2books.com`
-
-## Authentication
-
-Send your API key in the `X-API-Key` header:
-
-```
-X-API-Key: sk_development_…    (or sk_production_…)
+X-API-Key: sk_production_…    (or sk_development_…)
 ```
 
 ### Optional HMAC signature
 
-For stronger security you may sign requests. When you send signature headers, both are validated:
+For stronger security you may sign requests — when signature headers are present, both are validated:
 
 | Header | Value |
 |--------|-------|
 | `X-Signature` | `HMAC-SHA256(clientSecret, "{METHOD}{PATH}{BODY}{TIMESTAMP}")`, hex |
 | `X-Timestamp` | Unix time in **milliseconds**; must be within 5 minutes of server time |
 
-The signature is **optional** — if you omit both headers, the API key alone authenticates. If present, it must be valid.
+The signature is optional — the API key alone authenticates if you omit both headers. See [Authentication](/concepts/authentication).
 
 ### Errors
 
@@ -38,229 +39,29 @@ The signature is **optional** — if you omit both headers, the API key alone au
 | `409` | Conflict (e.g. connecting a company that's already connected) |
 | `429` | Rate limit exceeded (per-application, per-minute) |
 
-## Conventions
+## Conventions — read this before you integrate
 
-- **Async endpoints** return `{ "syncBatchId": "<uuid>" }`. Confirm resolution via the read endpoints or dashboard sync monitoring → [Tracking Results](/etims-tracking-results).
-- **`branchId`** (Catalog/Sales/Stock below) is your branch **key** (e.g. `HQ`), set when the branch was created — not the branch UUID used by the [Branches](#branches) endpoints.
+These four points explain almost every "why doesn't this work" question:
+
+- **Async endpoints** return `{ "syncBatchId": "<uuid>" }`. Confirm the result via [Tracking Results](/etims-tracking-results).
+- **`branchId`** in Catalog/Sales/Stock is your branch **key** (e.g. `HQ`), set when the branch was created — **not** the branch UUID used by the [Branches](#branches) endpoints. Mixing these up is the single most common integration mistake.
 - Sales/stock line items reference the **item `id`** returned by Sync2Books, not your `externalId`.
 - For valid field **codes** (tax category, units, packaging, payment, classification), see [Codes & Values](/etims-codes).
 
-## Endpoint summary
-
-| Method | Path | Mode | Returns |
-|--------|------|------|---------|
-| `POST` | `/companies/{companyId}/integrations/etims/catalog/items` | async | `{ syncBatchId }` |
-| `GET` | `/companies/{companyId}/integrations/etims/catalog/items` | sync | item list |
-| `POST` | `/companies/{companyId}/integrations/etims/catalog/items/sync` | async | `{ syncBatchId }` |
-| `POST` | `/companies/{companyId}/integrations/etims/sales` | async | `{ syncBatchId }` |
-| `GET` | `/companies/{companyId}/integrations/etims/sales` | sync | sales list |
-| `GET` | `/companies/{companyId}/integrations/etims/sales/{saleId}` | sync | sale |
-| `POST` | `/companies/{companyId}/integrations/etims/sales/credit-notes/express` | async | `{ syncBatchId }` |
-| `POST` | `/companies/{companyId}/integrations/etims/stock/transfer` | async | `{ syncBatchId }` |
-| `PUT` | `/companies/{companyId}/integrations/etims/stock/adjust` | async | `{ syncBatchId }` |
-| `POST` | `/companies/{companyId}/integrations/etims/provision` | sync | connection result *(advanced)* |
-| `GET` | `/companies/{companyId}/integrations/etims/branches` | sync | branch list |
-| `POST` | `/companies/{companyId}/integrations/etims/branches` | sync | branch object |
-| `POST` | `/companies/{companyId}/integrations/etims/branches/{branchId}/initialize` | sync | branch object |
-| `DELETE` | `/companies/{companyId}/integrations/etims/branches/{branchId}` | sync | `{ deleted: true }` |
-| `POST` | `/companies/{companyId}/integrations/etims/branches/reconcile-kra-pin` | sync | `{ reconciled, kraPin }` |
-
-> Connecting a company is normally done in the **dashboard**; the `provision` endpoint is for programmatic onboarding only. See [Connecting a Company](/etims-provisioning).
->
-> A company can have more than one branch. The endpoints above cover the API-key surface; get/update-by-id also exist on the JWT (dashboard) surface. See [Branches](/etims-branches) for the full API, including the identifier gotcha between `branchId` here (a branch UUID) and the `branchId` used in Catalog/Sales/Stock below (a branch **key**).
-
----
-
-## Catalog
-
-### Register item
-
-`POST /companies/{companyId}/integrations/etims/catalog/items`
-
-| Field | Type | Required |
-|-------|------|----------|
-| `externalId` | string | ✅ |
-| `name` | string | ✅ |
-| `itemType` | `GOODS` \| `SERVICE` | ✅ |
-| `taxCategory` | `VAT_STANDARD` \| `VAT_ZERO` \| `EXEMPT` \| `OTHER` | ✅ |
-| `classificationCode` | string | ⚠️ effectively required (KRA item classification) |
-| `unitCode` | string | — |
-| `packagingUnitCode` | string | — |
-| `sku` | string | — |
-| `internalUnit`, `taxTyCd`, `productTypeCode` | string | — |
-
-`itemType` determines stock behavior: **`GOODS`** are stock-tracked (sales deduct inventory), **`SERVICE`** items are non-stock (sales ignore inventory). See [Goods vs Services](/etims-catalog#goods-vs-services-stock-vs-non-stock).
-
-Returns `{ syncBatchId }`.
-
-### List items
-
-`GET /companies/{companyId}/integrations/etims/catalog/items` — returns your catalog (each item has its Sync2Books `id`, your `externalId`, and a registration status).
-
-### Sync items to eTIMS
-
-`POST /companies/{companyId}/integrations/etims/catalog/items/sync`
-
-| Field | Type | Required | Default |
-|-------|------|----------|---------|
-| `branchId` | string | ✅ | |
-| `itemIds` | string[] | — | all |
-| `onlyPending` | boolean | — | `true` |
-| `force` | boolean | — | `false` |
-
-Returns `{ syncBatchId }`. Details: [Catalog](/etims-catalog).
-
----
-
-## Sales
-
-### Create sale
-
-`POST /companies/{companyId}/integrations/etims/sales` — query `?submit=true|false` (default `true`).
-
-| Field | Type | Required |
-|-------|------|----------|
-| `branchId` | string | ✅ |
-| `saleDate` | string `YYYY-MM-DD` | ✅ |
-| `traderInvoiceNumber` | string | ✅ |
-| `receiptTypeCode` | string | ✅ |
-| `paymentTypeCode` | string | ✅ |
-| `invoiceStatusCode` | string | ✅ |
-| `customerTin`, `customerName` | string | — |
-| `items` | line item[] (min 1) | ✅ |
-
-**Line item**
-
-| Field | Type | Required |
-|-------|------|----------|
-| `id` | string (the item `id` from Sync2Books) | ✅ |
-| `quantity` | number | ✅ |
-| `unitPrice` | number | ✅ |
-| `taxCategory` | string | ✅ |
-| `taxAmount` | number | ✅ |
-| `discountRate`, `discountAmount`, `itemDescription` | — | — |
-
-Returns `{ syncBatchId }`.
-
-### List sales
-
-`GET /companies/{companyId}/integrations/etims/sales` — query: `before`, `after`, `startDate`, `endDate`, `pageSize`.
-
-### Get sale
-
-`GET /companies/{companyId}/integrations/etims/sales/{saleId}` (`saleId` = the sale's `id`).
-
-### Express credit note
-
-`POST /companies/{companyId}/integrations/etims/sales/credit-notes/express` — query `?submit=true|false`.
-
-| Field | Type | Required |
-|-------|------|----------|
-| `branchId` | string | ✅ |
-| `saleId` | string (the accepted sale's `id`) | ✅ |
-| `traderInvoiceNumber` | string | ✅ |
-| `returnDate` | string `YYYY-MM-DD` | ✅ |
-| `paymentTypeCode`, `invoiceStatusCode` | string | — |
-
-Returns `{ syncBatchId }`. Details: [Sales & Credit Notes](/etims-sales).
-
----
-
-## Stock
-
-### Adjust stock
-
-`PUT /companies/{companyId}/integrations/etims/stock/adjust`
-
-| Field | Type | Required |
-|-------|------|----------|
-| `itemId` | string (the item `id`) | ✅ |
-| `branchId` | string | ✅ |
-| `quantity` | number | ✅ |
-| `action` | `ADD` \| `DEDUCT` | ✅ |
-| `movementTypeCode`, `referenceId` | string | — |
-
-Returns `{ syncBatchId }`.
-
-### Transfer stock
-
-`POST /companies/{companyId}/integrations/etims/stock/transfer`
-
-| Field | Type | Required |
-|-------|------|----------|
-| `itemId` | string | ✅ |
-| `fromBranchId` | string | ✅ |
-| `receivingItemId` | string | ✅ |
-| `toBranchId` | string | ✅ |
-| `quantity` | number | ✅ |
-| `referenceId` | string | — |
-
-Returns `{ syncBatchId }`. Details: [Stock](/etims-stock).
-
----
-
-## Connect a company (advanced)
-
-`POST /companies/{companyId}/integrations/etims/provision`
-
-> Most integrations connect companies in the **dashboard**. Use this endpoint only for programmatic onboarding.
-
-| Field | Type | Required |
-|-------|------|----------|
-| `kraPin` | string (min 3) | ✅ |
-| `environment` | `SANDBOX` \| `PRODUCTION` | ✅ |
-| `dvcSrlNo` | string | ✅ |
-| `displayName` | string | — |
-| `sync2booksBranchKey` | string | — |
-| `kraBhfId` | string | — |
-
-Synchronous; returns `{ connectionId, complianceTenantId, defaultBranchId, branchId, environment, initialized }` — all id fields here are internal ids, **not** the `branchId` you use in Catalog/Sales/Stock below (that's `sync2booksBranchKey`, or `kraBhfId` if you didn't set one). `409` if the company is already connected. Details: [Connecting a Company](/etims-provisioning).
-
----
-
-## Branches
-
-`branchId` in this section is a branch **UUID** (the `id` field on a branch object) — not the branch key used in Catalog/Sales/Stock. See [Branches](/etims-branches) for the full API, including the JWT/dashboard surface (which also has get-by-id and update).
-
-### List branches
-
-`GET /companies/{companyId}/integrations/etims/branches` — returns every branch for the company.
-
-### Add a branch
-
-`POST /companies/{companyId}/integrations/etims/branches`
-
-| Field | Type | Required |
-|-------|------|----------|
-| `kraBhfId` | string | ✅ |
-| `dvcSrlNo` | string | ✅ |
-| `displayName` | string | — |
-| `branchKey` | string | — defaults to `kraBhfId`; immutable once set |
-
-`kraPin`/`environment` are inherited from the Headquarters branch. Returns the new branch object (`201`). `409` if `kraBhfId` already exists for the company.
-
-### Re-initialize a branch
-
-`POST /companies/{companyId}/integrations/etims/branches/{branchId}/initialize` — retries OSCU device initialization for a `failed` branch.
-
-### Remove a branch
-
-`DELETE /companies/{companyId}/integrations/etims/branches/{branchId}` — `400` if this is the Headquarters branch.
-
-### Reconcile KRA PIN
-
-`POST /companies/{companyId}/integrations/etims/branches/reconcile-kra-pin` — one-time backfill fix; no-op if already set.
-
-Details: [Branches](/etims-branches).
-
-## Enums
-
-| Enum | Values |
-|------|--------|
-| `environment` | `SANDBOX`, `PRODUCTION` |
-| `itemType` | `GOODS`, `SERVICE` |
-| `taxCategory` | `VAT_STANDARD`, `VAT_ZERO`, `EXEMPT`, `OTHER` |
-| stock `action` | `ADD`, `DEDUCT` |
-
-> **Interactive reference.** The live, always-current schema is in the Sync2Books API docs at `https://api.sync2books.com/api`.
-
+## Resources at a glance
+
+| Resource | What it's for | Guide |
+|----------|---------------|-------|
+| **Catalog** | Register goods/services, sync them to eTIMS | [Catalog](/etims-catalog) |
+| **Sales & Credit Notes** | Issue KRA-signed sales, reverse them | [Sales & Credit Notes](/etims-sales) |
+| **Stock** | Adjust and transfer inventory | [Stock](/etims-stock) |
+| **Connecting a company** | Programmatic onboarding (advanced — normally done in the dashboard) | [Connecting a Company](/etims-provisioning) |
+| **Branches** | A company's OSCU devices/locations | [Branches](/etims-branches) |
+
+## Endpoints
+
+Every endpoint below is generated from the live OpenAPI spec — expand one, fill in your API key once, and try it directly against production or sandbox.
+
+<Note>
+The live, always-current schema is also served at `https://api.sync2books.com/api-json`.
+</Note>

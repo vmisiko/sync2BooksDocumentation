@@ -3,10 +3,14 @@ title: "Sync2Books documentation"
 description: "One API to sync financial data to accounting systems and keep Kenyan businesses tax-compliant with KRA eTIMS."
 ---
 
-Sync2Books is a unified API that lets your application **sync financial data** to
-accounting systems (QuickBooks Online, Xero, Sage) and keep your customers
-**tax-compliant with KRA eTIMS** in Kenya — without building against each system
-yourself.
+Sync2Books is two products behind one API key: an **Accounting API** that syncs financial
+data to accounting systems (QuickBooks Online, Xero, Sage, Dynamics 365 Business Central, Odoo),
+and a **Compliance API** that keeps your Kenyan customers tax-compliant with KRA eTIMS —
+without building against each system yourself.
+
+<Card title="New here? Start with: which API do I need?" icon="signs-post" href="/which-api">
+  A two-minute read that separates the two products so the rest of these docs make sense. **Read this first.**
+</Card>
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="bolt" href="/quickstart">
@@ -37,16 +41,22 @@ every product.
   </Card>
 </CardGroup>
 
-## Products
+## The two products
 
 <CardGroup cols={2}>
-  <Card title="Expenses" icon="receipt" href="/expenses-overview">
-    Write categorized expenses, bills, and receipts to your customers' accounting software.
+  <Card title="Accounting API" icon="receipt" href="/expenses-overview">
+    Write categorized expenses, bills, invoices, and payments to your customers' accounting software.
+
+    **Reference:** [interactive Accounting API docs](/api-reference)
   </Card>
-  <Card title="eTIMS compliance (Kenya)" icon="file-invoice" href="/etims-overview">
+  <Card title="Compliance API — eTIMS (Kenya)" icon="file-invoice" href="/etims-overview">
     Register items, manage stock, and issue KRA-signed sales and credit notes.
+
+    **Reference:** [interactive Compliance API docs](/etims-api-reference)
   </Card>
 </CardGroup>
+
+Not sure which one applies to you? See [Which API do I need?](/which-api)
 
 ## Build the connection UI
 
@@ -62,5 +72,4 @@ every product.
 ## Support
 
 - **Email** — [support@sync2books.com](mailto:support@sync2books.com)
-- **Interactive API** — [api.sync2books.com/api](https://api.sync2books.com/api)
 - **Status** — [status.sync2books.com](https://status.sync2books.com)
