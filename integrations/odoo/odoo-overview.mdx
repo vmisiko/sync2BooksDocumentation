@@ -27,17 +27,17 @@ See [Set up the Odoo integration](/integrations/odoo/odoo-setup) to learn how to
 | Suppliers | ✅ | Maps to `res.partner` with `supplier_rank > 0` — Odoo has no separate vendor model |
 | Accounts (chart of accounts) | ✅ | Maps to `account.account` |
 | Bills | ✅ | Maps to a single `account.move` (`move_type: in_invoice`) with embedded line items |
-| Invoices (outbound, customer-facing) | ❌ | Not built yet — QuickBooks-only today |
-| Bill payments | ❌ | Requires resolving which Odoo bank/cash journal to post through — not collected yet |
-| Expenses | ❌ | Same gap as bill payments |
-| Tax rates | ❌ | Not built |
-| Tracking categories | ❌ | Not built |
+| Invoices (outbound, customer-facing) | ✅ | Maps to a single `account.move` (`move_type: out_invoice`), mirroring Bills |
+| Bill payments | ✅ | Posts through a resolved Odoo bank/cash journal via the `account.payment.register` wizard |
+| Expenses | ✅ | Creates a vendor bill and pays it in full immediately — Odoo has no single object matching QuickBooks' "Purchase" |
+| Tax rates | ✅ | Pull-only sync (`POST /tax-rates/sync/:connectionId`) from Odoo's `account.tax` |
+| Tracking categories | ✅ | Pull-only sync (`POST /tracking-categories/sync/:connectionId`) from Odoo's `account.analytic.account` |
 | Attachments | ❌ | Not built |
 | Inbound sync (Odoo → Sync2Books) | ❌ | Odoo has no webhook-push mechanism into Sync2Books; would require polling |
 
-## Why bill payments and expenses aren't supported yet
+## How bill payments and expenses resolve journals
 
-QuickBooks has one flat list of accounts — a bank account is just a chart-of-accounts entry with `AccountType: "Bank"`, so posting a payment or expense only ever needs one kind of reference. Odoo (like Microsoft Dynamics 365 Business Central) keeps the chart of accounts and the "journal" a transaction actually posts through as two separate things — Odoo's `account.payment` model requires a `journal_id`, not a chart-of-accounts id. Nothing in the connector resolves that yet, so both operations fail with a clear, deliberate error rather than guessing at the wrong journal.
+QuickBooks has one flat list of accounts — a bank account is just a chart-of-accounts entry with `AccountType: "Bank"`, so posting a payment or expense only ever needs one kind of reference. Odoo (like Microsoft Dynamics 365 Business Central) keeps the chart of accounts and the "journal" a transaction actually posts through as two separate things — Odoo's `account.payment` model requires a `journal_id`, not a chart-of-accounts id. The connector resolves this by finding-or-creating a bank journal for the given account, preserving Bank vs. Credit Card account-type fidelity rather than collapsing through a generic category.
 
 ## Authentication
 

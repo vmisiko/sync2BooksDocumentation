@@ -143,6 +143,7 @@ POST /bills
 | Supplier | `res.partner` | Created with `supplier_rank: 1` — same model as Customer, Odoo has no separate vendor entity |
 | Account | `account.account` | `account_type` derived from the Sync2Books account category |
 | Bill | `account.move` | `move_type: "in_invoice"`, with line items embedded as `invoice_line_ids` create-commands in a single call |
+| Invoice | `account.move` | `move_type: "out_invoice"` — same shape as Bill |
 
 ### Bill → account.move mapping
 
@@ -164,15 +165,10 @@ POST /bills
 
 ## Not yet supported
 
-These return `501 Not Implemented` with a clear reason, not a silent failure:
-
 | Operation | Reason |
 | --- | --- |
-| `POST /bill-payments` (Odoo connection) | Needs a resolved Odoo bank/cash journal — not collected yet |
-| `POST /expenses` (Odoo connection) | Same gap as bill payments |
-| Invoice sync (outbound) | Not built for Odoo — QuickBooks-only today |
-| Tax rates, tracking categories | Not built |
 | Attachments | Not built |
+| Inbound sync (Odoo → Sync2Books) | Odoo has no webhook-push mechanism; would require polling |
 
 ## Error codes
 

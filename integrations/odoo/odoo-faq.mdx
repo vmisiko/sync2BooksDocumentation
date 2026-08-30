@@ -50,11 +50,11 @@ Check, in order:
 
 ### What can I sync to Odoo today?
 
-Customers, suppliers, chart-of-accounts entries, and vendor bills. See the coverage table in [Odoo overview](/integrations/odoo/odoo-overview#supported-operations) — invoices, bill payments, expenses, tax rates, and tracking categories aren't built yet.
+Customers, suppliers, chart-of-accounts entries, vendor bills, invoices, bill payments, expenses, tax rates, and tracking categories. See the coverage table in [Odoo overview](/integrations/odoo/odoo-overview#supported-operations) — attachments and inbound sync (Odoo → Sync2Books) aren't built yet.
 
-### Why can't I create bill payments or expenses in Odoo?
+### How does Sync2Books know which journal to post bill payments or expenses through in Odoo?
 
-Both require Sync2Books to know which Odoo bank/cash **journal** to post through, which is a different concept from a chart-of-accounts account — Odoo's `account.payment` model needs a `journal_id`, not an account id. This isn't collected anywhere yet, so both operations return a deliberate `501 Not Implemented` rather than guessing. See [Odoo overview](/integrations/odoo/odoo-overview#why-bill-payments-and-expenses-arent-supported-yet).
+Odoo's `account.payment` model needs a bank/cash **journal** id, not a chart-of-accounts id — a different concept from QuickBooks' flat account list. The connector resolves this by finding-or-creating a bank journal for the relevant account, preserving Bank vs. Credit Card fidelity. See [Odoo overview](/integrations/odoo/odoo-overview#how-bill-payments-and-expenses-resolve-journals).
 
 ### How are suppliers different from customers in Odoo?
 
