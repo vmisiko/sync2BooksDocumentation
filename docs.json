@@ -69,6 +69,7 @@
               "etims-tracking-results",
               "etims-errors",
               "etims-codes",
+              "etims-architecture",
               "etims-postman",
               "ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY"
             ]

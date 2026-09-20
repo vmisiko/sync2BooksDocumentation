@@ -1,0 +1,67 @@
+---
+title: "Technology Architecture (TIS ↔ eTIMS)"
+description: "How Sync2Books operates as a Trader Invoicing System and transmits fiscal data to KRA eTIMS over OSCU — the architecture document submitted for third-party integrator certification."
+---
+
+This is the architecture behind the eTIMS pages in this section: how Sync2Books acts as a
+**Trader Invoicing System (TIS)** and transmits fiscal data to **KRA eTIMS** over the **OSCU**
+path. It is the same document submitted to KRA for third-party integrator certification, so it
+describes the system as built rather than as planned — anything not yet implemented is confined
+to its "Planned enhancements" section.
+
+<a href="/assets/sync2books-TIS-Technology-Architecture-v2.pdf" download="sync2books-TIS-Technology-Architecture-v2.pdf">
+  <Card title="Download the Technology Architecture document (PDF)" icon="download">
+    Version 2.0 — 16 pages. Supersedes v1.0.
+  </Card>
+</a>
+
+## What it covers
+
+<CardGroup cols={2}>
+  <Card title="System context" icon="diagram-project">
+    The three ways into the platform — dashboard, accounting platform, and direct API — and why
+    they all converge on one service that talks to KRA.
+  </Card>
+  <Card title="Credential custody" icon="key">
+    Where the OSCU communication key, device id and SCU id live: one row per branch, held by the
+    compliance service alone.
+  </Card>
+  <Card title="Integration sequence" icon="list-ol">
+    Device initialisation → reference data → branch info → item registration → stock → sales and
+    credit notes → purchases → receipt generation, each mapped to the OSCU operation it calls.
+  </Card>
+  <Card title="Receipt conformance" icon="receipt">
+    The TIS receipt template: required fields, credit-note rules, COPY receipts, and QR
+    verification against KRA's own receipt portal.
+  </Card>
+  <Card title="Environments" icon="server">
+    Sandbox and production separation, and how each branch is tagged so submissions cannot cross.
+  </Card>
+  <Card title="Reliability" icon="rotate">
+    Idempotency, KRA sequence-counter self-healing, and the audit trail kept for every
+    submission.
+  </Card>
+</CardGroup>
+
+## Who it's for
+
+<Note>
+  You do **not** need this document to integrate. Start with
+  [eTIMS Compliance Overview](/etims-overview) and
+  [Get Started with eTIMS](/etims-getting-started) instead.
+</Note>
+
+It's written for reviewers and technical evaluators — KRA certification, a tax or security
+audit, or a prospective partner's due diligence — who need to see how fiscal data reaches KRA
+and how taxpayer credentials are held.
+
+## Source and versioning
+
+The PDF is generated from a markdown source kept with the compliance service, so the document
+and the code stay in the same review loop. It is rebuilt with:
+
+```bash
+python3 scripts/build-architecture-pdf.py
+```
+
+Don't hand-edit the PDF — edit the markdown and rebuild, or the two drift apart.
