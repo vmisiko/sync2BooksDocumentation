@@ -3,7 +3,7 @@ title: "Errors & Troubleshooting"
 description: "What a failed catalog sync or sale actually means, how to tell a data problem from a system one, and whether it's safe to retry."
 ---
 
-Catalog syncs and sales are processed asynchronously (see [Tracking Results](/etims-tracking-results)) — when one fails, the failure carries a human-readable reason. This page explains how to read that reason and what to do about it.
+Catalog syncs and sales carry a human-readable reason when they fail. This page explains how to read that reason and what to do about it.
 
 ## Where to find the reason
 
@@ -39,9 +39,9 @@ A `retryable:`-prefixed message is a promise, not just a hint: Sync2Books' inter
 
 | Reason | Category | What it means | Fix |
 |--------|----------|----------------|-----|
-| `Missing classification mapping for item...` | Data | No `classificationCode` was supplied and none is pre-configured for your account | Supply a valid `classificationCode` → [Classification codes](/etims-catalog#classification-codes) |
-| `Item has not been synced to eTIMS (missing etimsItemCode)` | Data | You tried to sell (or reference) an item that's only `PENDING`, not `REGISTERED` | Sync the item first → [Catalog](/etims-catalog) |
-| `Insufficient stock: Have X, tried to deduct Y` | Data | Selling a `GOODS` item deducts stock; there isn't enough on hand | Add stock before selling → [Stock](/etims-stock) |
+| `Missing classification mapping for item...` | Data | No `classificationCode` was supplied and none is pre-configured for your account | Supply a valid `classificationCode` → [Codes & Values](/etims-codes) |
+| `Item has not been synced to eTIMS (missing etimsItemCode)` | Data | You tried to sell (or reference) an item that's only `PENDING`, not `REGISTERED` | Register the item with KRA first |
+| `Insufficient stock: Have X, tried to deduct Y` | Data | Selling a `GOODS` item deducts stock; there isn't enough on hand | Add stock before selling |
 | `...can only be among the following list: [...]` | Data | A code you supplied (packaging unit, quantity unit, tax type, etc.) isn't one KRA recognizes — the message lists every value KRA will accept for that field | Pick one of the listed values → [Codes & Values](/etims-codes) |
 | Any message prefixed `retryable:` | System | The request didn't complete — a timeout, connection issue, or gateway error between Sync2Books and KRA | Retry — no data changes needed |
 
@@ -56,6 +56,6 @@ Retrying a *data* rejection without fixing the underlying value will simply fail
 
 ## Read next
 
-- [Tracking Results](/etims-tracking-results) — the async model these failures surface through
+- [eTIMS Overview](/etims-overview) — how the integration is shaped and how to get access
 - [Codes & Values](/etims-codes) — the code lists behind most data rejections
-- [Catalog](/etims-catalog) and [Sales & Credit Notes](/etims-sales) — the operations that can fail this way
+- [Codes & Values](/etims-codes) — the KRA code values a rejected field is validated against

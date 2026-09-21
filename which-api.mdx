@@ -20,10 +20,10 @@ Sync2Books is **two separate products** that happen to share a dashboard, an API
 |---|---|---|
 | **Answers the question** | "How do I get this expense/bill/invoice into my customer's books?" | "How do I make this sale legal under Kenyan tax law?" |
 | **The external system** | An accounting package your customer already uses (QuickBooks, Xero, Sage, Dynamics, Odoo) | The Kenya Revenue Authority's eTIMS network (via an OSCU device) |
-| **How you connect a company** | OAuth, via the [Link component](/link-integration) or an `authUrl` | KRA PIN + device serial, via the **dashboard** (see [Connecting a Company](/etims-provisioning)) |
+| **How you connect a company** | OAuth, via the [Link component](/link-integration) or an `authUrl` | KRA PIN + device serial, in the **compliance dashboard** (see [eTIMS Overview](/etims-overview)) |
 | **Core objects** | Expense, Bill, Invoice, Bill Payment | Catalog item, Sale, Credit note, Branch |
 | **Geography** | Anywhere | Kenya only |
-| **Reference docs** | [Accounting API](/api-reference) | [Compliance API](/etims-api-reference) |
+| **Reference docs** | [Accounting API](/api-reference) | [Compliance API](/etims-overview) |
 
 ## What's shared
 
@@ -31,7 +31,7 @@ Both products sit behind the same [authentication](/concepts/authentication) (yo
 
 ## Using both together
 
-A single company can be connected to **both** an accounting system and eTIMS at once — that's the common case for a Kenyan business: you write an invoice through the Accounting API, and the same invoice is (optionally) submitted to eTIMS for a KRA-signed receipt. The two flows are independent — an eTIMS sale doesn't require an accounting connection, and an accounting invoice doesn't require eTIMS — but [Invoices](/etims-sales) can carry a reference to the matching eTIMS receipt once both have run.
+A single company can be connected to **both** an accounting system and eTIMS at once — that's the common case for a Kenyan business: you write an invoice through the Accounting API, and the same invoice is (optionally) submitted to eTIMS for a KRA-signed receipt. The two flows are independent — an eTIMS sale doesn't require an accounting connection, and an accounting invoice doesn't require eTIMS — but an invoice can carry a reference to the matching eTIMS receipt once both have run.
 
 ## Still not sure?
 

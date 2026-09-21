@@ -60,17 +60,9 @@
             "group": "Compliance API — eTIMS (Kenya)",
             "pages": [
               "etims-overview",
-              "etims-getting-started",
-              "etims-provisioning",
-              "etims-branches",
-              "etims-catalog",
-              "etims-sales",
-              "etims-stock",
-              "etims-tracking-results",
-              "etims-errors",
               "etims-codes",
+              "etims-errors",
               "etims-architecture",
-              "etims-postman",
               "ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY"
             ]
           },
@@ -92,19 +84,6 @@
           {
             "group": "Endpoints",
             "openapi": "/openapi/accounting.json"
-          }
-        ]
-      },
-      {
-        "tab": "Compliance API",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": ["etims-api-reference"]
-          },
-          {
-            "group": "Endpoints",
-            "openapi": "/openapi/etims.json"
           }
         ]
       }

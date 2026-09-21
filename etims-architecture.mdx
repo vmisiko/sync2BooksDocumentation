@@ -11,7 +11,7 @@ to its "Planned enhancements" section.
 
 <a href="/assets/sync2books-TIS-Technology-Architecture-v2.pdf" download="sync2books-TIS-Technology-Architecture-v2.pdf">
   <Card title="Download the Technology Architecture document (PDF)" icon="download">
-    Version 2.0 — 16 pages. Supersedes v1.0.
+    Version 2.0 — 17 pages. Supersedes v1.0.
   </Card>
 </a>
 
@@ -19,8 +19,12 @@ to its "Planned enhancements" section.
 
 <CardGroup cols={2}>
   <Card title="System context" icon="diagram-project">
-    The three ways into the platform — dashboard, accounting platform, and direct API — and why
-    they all converge on one service that talks to KRA.
+    The three ways fiscal data reaches KRA — dashboard, accounting platform, and the Compliance
+    API — and why they all converge on one component that holds the OSCU credentials.
+  </Card>
+  <Card title="The integration surface" icon="plug">
+    What an integrator actually works with: registering the business, getting an API key from the
+    compliance dashboard, reference data, then sales, credit notes and receipts.
   </Card>
   <Card title="Credential custody" icon="key">
     Where the OSCU communication key, device id and SCU id live: one row per branch, held by the
@@ -47,13 +51,17 @@ to its "Planned enhancements" section.
 
 <Note>
   You do **not** need this document to integrate. Start with
-  [eTIMS Compliance Overview](/etims-overview) and
-  [Get Started with eTIMS](/etims-getting-started) instead.
+  [eTIMS Compliance Overview](/etims-overview) instead.
 </Note>
 
 It's written for reviewers and technical evaluators — KRA certification, a tax or security
 audit, or a prospective partner's due diligence — who need to see how fiscal data reaches KRA
 and how taxpayer credentials are held.
+
+It describes the fiscalisation path and the interface you integrate against. It deliberately
+leaves out our internal service topology and administrative interfaces: they aren't part of the
+integration contract, and publishing them would widen the attack surface around taxpayers' KRA
+device credentials without telling a reviewer anything useful.
 
 ## Source and versioning
 
