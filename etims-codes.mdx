@@ -90,9 +90,11 @@ Send `paymentTypeCode` when creating a sale:
 
 `classificationCode` is the KRA **item classification** (`itemClsCd`) for the product — e.g. `14111400`. Unlike the other codes, **there is no default**: you must supply a valid code when registering an item, unless classification rules have been pre-configured for your account.
 
-- Get valid codes from **KRA's item classification list** (see [references](#kra-references)).
+- Get valid codes from the **[Item Classification Codes](/etims-item-classification-codes)** reference (or KRA's own list — see [references](#kra-references)).
 - Pick the code that best matches the product.
 - Once set, the item can be synced and sold.
+
+See [Item Attributes](/etims-item-attributes) for the full item data model this code is part of.
 
 If you register without it and no rule applies, the request is rejected with `Missing classification mapping`.
 

@@ -67,6 +67,13 @@
             ]
           },
           {
+            "group": "Compliance API — Reference (Kenya)",
+            "pages": [
+              "etims-item-attributes",
+              "etims-item-classification-codes"
+            ]
+          },
+          {
             "group": "Link component",
             "pages": [
               "link-integration"
