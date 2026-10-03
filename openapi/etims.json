@@ -1,0 +1,4645 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sync2Books Compliance API (eTIMS)",
+    "version": "1.0.0",
+    "description": "Register items, issue sales and credit notes, record stock and read supplier invoices for a Kenyan business, with every fiscal document signed by KRA eTIMS.\n\nAuthenticate with an API key from the compliance dashboard, sent in the `x-api-key` header or as a bearer token. A `cmp_sk_test_...` key acts on sandbox businesses and a `cmp_sk_live_...` key on production ones; both use the same base URL.\n\nNew here? Start with the [eTIMS quickstart](/etims-quickstart). The conventions every endpoint shares are in [Authentication & API keys](/etims-authentication), [Errors & Troubleshooting](/etims-errors), [Idempotency](/etims-idempotency) and [Rate limits](/etims-rate-limits).\n\nThis is a separate product from the [Accounting API](/api-reference), with its own keys."
+  },
+  "servers": [
+    {
+      "url": "https://sync2books-compliance-api.apps.kintro.money",
+      "description": "Sync2Books Compliance API. The key you use decides whether a call reaches the KRA sandbox or production."
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    },
+    {
+      "BearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Identity",
+      "description": "Check what a key can do."
+    },
+    {
+      "name": "Businesses",
+      "description": "The businesses and branches a key can act for."
+    },
+    {
+      "name": "Items",
+      "description": "Create items and register them with KRA. An item must be registered before it can be sold."
+    },
+    {
+      "name": "Stock",
+      "description": "Record stock movements and report them to KRA."
+    },
+    {
+      "name": "Sales",
+      "description": "Issue sales, read them back and download KRA-signed receipts."
+    },
+    {
+      "name": "Credit notes",
+      "description": "Reverse an accepted sale in full."
+    },
+    {
+      "name": "Purchases",
+      "description": "Supplier invoices KRA holds against the business."
+    },
+    {
+      "name": "Lookups",
+      "description": "KRA code lists and item classifications."
+    }
+  ],
+  "paths": {
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "Identity"
+        ],
+        "operationId": "getMe",
+        "summary": "Check your key",
+        "description": "Returns the application, environment and permissions behind the key you used. This is the first call to make: it confirms the key works and tells you what it may do.\n\nNeeds no scope: any valid key can call it.",
+        "responses": {
+          "200": {
+            "description": "What the key can do.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "applicationId": {
+                          "type": "string"
+                        },
+                        "environment": {
+                          "$ref": "#/components/schemas/Environment"
+                        },
+                        "businessId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "The business a business-bound key is limited to. `null` for an organisation-wide key."
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "business",
+                            "organization"
+                          ]
+                        },
+                        "scopes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "rateLimitPerMin": {
+                          "type": "integer",
+                          "description": "Requests per minute your application may make."
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "applicationId": "app_example_1",
+                    "environment": "SANDBOX",
+                    "businessId": "biz_example_1",
+                    "scope": "business",
+                    "scopes": [
+                      "catalog:read",
+                      "catalog:write",
+                      "sales:read",
+                      "sales:write",
+                      "stock:write",
+                      "purchases:read",
+                      "lookups:read"
+                    ],
+                    "rateLimitPerMin": 120
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/businesses": {
+      "get": {
+        "tags": [
+          "Businesses"
+        ],
+        "operationId": "listBusinesses",
+        "summary": "List businesses",
+        "description": "Lists the businesses this key can act for, in the key's own environment. A business-bound key sees only its business. Use this to find the `businessId` an organisation-wide key must send.\n\nRequired scope: `lookups:read`.",
+        "responses": {
+          "200": {
+            "description": "The businesses.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "businesses": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Business"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "businesses": [
+                      {
+                        "id": "biz_example_1",
+                        "displayName": "Example Trading Ltd",
+                        "environment": "SANDBOX"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/businesses/{businessId}": {
+      "get": {
+        "tags": [
+          "Businesses"
+        ],
+        "operationId": "getBusiness",
+        "summary": "Get a business",
+        "description": "Returns one business with its branches.\n\nRequired scope: `lookups:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BusinessPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The business.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "business": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/Business"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "branches": {
+                                  "type": "array",
+                                  "items": {
+                                    "$ref": "#/components/schemas/Branch"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "business": {
+                      "id": "biz_example_1",
+                      "displayName": "Example Trading Ltd",
+                      "environment": "SANDBOX",
+                      "branches": [
+                        {
+                          "id": "br_example_1",
+                          "kraBhfId": "00",
+                          "displayName": "Head Office",
+                          "tradeAddressLine1": "1 Example Road",
+                          "tradeCity": "Nairobi"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/businesses/{businessId}/branches": {
+      "get": {
+        "tags": [
+          "Businesses"
+        ],
+        "operationId": "listBranches",
+        "summary": "List branches",
+        "description": "Lists the branches of a business. Branches are created in the compliance dashboard; this endpoint only reads them.\n\nRequired scope: `lookups:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BusinessPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The branches.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "branches": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Branch"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "branches": [
+                      {
+                        "id": "br_example_1",
+                        "kraBhfId": "00",
+                        "displayName": "Head Office",
+                        "tradeAddressLine1": "1 Example Road",
+                        "tradeCity": "Nairobi"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/items": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "createOrUpdateItem",
+        "summary": "Create or update an item",
+        "description": "Creates an item, or updates the one with the same `externalId`. The item starts as `PENDING`: it is **not** registered with KRA until you call `POST /v1/items/{id}/register`. The call returns `201` for both a create and an update.\n\nRequired scope: `catalog:write`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              },
+              "examples": {
+                "goods": {
+                  "summary": "A stocked product",
+                  "value": {
+                    "externalId": "SKU-1042",
+                    "name": "500ml Cooking Oil",
+                    "sku": "COOK-OIL-500",
+                    "taxCategory": "VAT_STANDARD",
+                    "productTypeCode": "2",
+                    "classificationCode": "50150000",
+                    "unitCode": "U",
+                    "packagingUnitCode": "NT",
+                    "unitPrice": 3500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The item as stored.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "$ref": "#/components/schemas/Item"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "item": {
+                      "id": "itm_example_1",
+                      "externalId": "SKU-1042",
+                      "name": "500ml Cooking Oil",
+                      "sku": "COOK-OIL-500",
+                      "taxCategory": "VAT_STANDARD",
+                      "taxTypeCode": "B",
+                      "productTypeCode": "2",
+                      "classificationCode": "50150000",
+                      "unitCode": "U",
+                      "packagingUnitCode": "NT",
+                      "unitPrice": 3500,
+                      "stockTracked": true,
+                      "registrationStatus": "PENDING",
+                      "needs": {
+                        "productType": false,
+                        "classificationMapping": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "listItems",
+        "summary": "List items",
+        "description": "Lists every item of the business that has not been deleted. The list is not paginated.\n\nRequired scope: `catalog:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The items.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "items": [
+                      {
+                        "id": "itm_example_1",
+                        "externalId": "SKU-1042",
+                        "name": "500ml Cooking Oil",
+                        "sku": "COOK-OIL-500",
+                        "taxCategory": "VAT_STANDARD",
+                        "taxTypeCode": "B",
+                        "productTypeCode": "2",
+                        "classificationCode": "50150000",
+                        "unitCode": "U",
+                        "packagingUnitCode": "NT",
+                        "unitPrice": 3500,
+                        "stockTracked": true,
+                        "registrationStatus": "PENDING",
+                        "needs": {
+                          "productType": false,
+                          "classificationMapping": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/items/{id}": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "getItem",
+        "summary": "Get an item",
+        "description": "Returns one item. An unknown id, an id of another business and a deleted item all answer `404`.\n\nRequired scope: `catalog:read`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The item id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "$ref": "#/components/schemas/Item"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "item": {
+                      "id": "itm_example_1",
+                      "externalId": "SKU-1042",
+                      "name": "500ml Cooking Oil",
+                      "sku": "COOK-OIL-500",
+                      "taxCategory": "VAT_STANDARD",
+                      "taxTypeCode": "B",
+                      "productTypeCode": "2",
+                      "classificationCode": "50150000",
+                      "unitCode": "U",
+                      "packagingUnitCode": "NT",
+                      "unitPrice": 3500,
+                      "stockTracked": true,
+                      "registrationStatus": "PENDING",
+                      "needs": {
+                        "productType": false,
+                        "classificationMapping": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/items/{id}/register": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "operationId": "registerItem",
+        "summary": "Register an item with KRA",
+        "description": "Registers the item with KRA so it can be sold. The body is optional. If KRA rejects the item, or it is missing something, the response is a `422` that includes the item so you can see `needs` and `registrationStatus`.\n\nRequired scope: `catalog:write`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The item id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterItemRequest"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The item, now `REGISTERED`.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "$ref": "#/components/schemas/Item"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "item": {
+                      "id": "itm_example_1",
+                      "externalId": "SKU-1042",
+                      "name": "500ml Cooking Oil",
+                      "sku": "COOK-OIL-500",
+                      "taxCategory": "VAT_STANDARD",
+                      "taxTypeCode": "B",
+                      "productTypeCode": "2",
+                      "classificationCode": "50150000",
+                      "unitCode": "U",
+                      "packagingUnitCode": "NT",
+                      "unitPrice": 3500,
+                      "stockTracked": true,
+                      "registrationStatus": "PENDING",
+                      "needs": {
+                        "productType": false,
+                        "classificationMapping": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "description": "KRA did not register the item, or the item is not ready to be registered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "item_incomplete": {
+                    "summary": "item_incomplete",
+                    "value": {
+                      "error": {
+                        "code": "item_incomplete",
+                        "message": "This item cannot be registered yet. See item.needs for what is missing, add it with POST /v1/items, then register again.",
+                        "item": {
+                          "id": "itm_example_1",
+                          "externalId": "SKU-1042",
+                          "name": "500ml Cooking Oil",
+                          "sku": "COOK-OIL-500",
+                          "taxCategory": "VAT_STANDARD",
+                          "taxTypeCode": "B",
+                          "productTypeCode": "2",
+                          "classificationCode": null,
+                          "unitCode": "U",
+                          "packagingUnitCode": "NT",
+                          "unitPrice": 3500,
+                          "stockTracked": true,
+                          "registrationStatus": "PENDING",
+                          "needs": {
+                            "productType": false,
+                            "classificationMapping": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "kra_rejected": {
+                    "summary": "kra_rejected",
+                    "value": {
+                      "error": {
+                        "code": "kra_rejected",
+                        "message": "The KRA reason for the rejection.",
+                        "item": {
+                          "id": "itm_example_1",
+                          "externalId": "SKU-1042",
+                          "name": "500ml Cooking Oil",
+                          "sku": "COOK-OIL-500",
+                          "taxCategory": "VAT_STANDARD",
+                          "taxTypeCode": "B",
+                          "productTypeCode": "2",
+                          "classificationCode": "50150000",
+                          "unitCode": "U",
+                          "packagingUnitCode": "NT",
+                          "unitPrice": 3500,
+                          "stockTracked": true,
+                          "registrationStatus": "PENDING",
+                          "needs": {
+                            "productType": false,
+                            "classificationMapping": false
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/stock/adjustments": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "adjustStock",
+        "summary": "Adjust stock",
+        "description": "Adds or deducts stock for an item at a branch and reports the movement to KRA. Each call is a separate movement; it is not de-duplicated. The call returns `201`.\n\nRequired scope: `stock:write`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockAdjustmentRequest"
+              },
+              "examples": {
+                "opening": {
+                  "summary": "Opening stock",
+                  "value": {
+                    "itemId": "itm_example_1",
+                    "action": "ADD",
+                    "quantity": 100,
+                    "unitPrice": 2800,
+                    "referenceId": "OPENING-2026-10"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The movement was recorded.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "itemId": {
+                          "type": "string"
+                        },
+                        "branchId": {
+                          "type": "string"
+                        },
+                        "movementId": {
+                          "type": "string"
+                        },
+                        "quantityOnHand": {
+                          "type": "number"
+                        },
+                        "etims": {
+                          "type": "object",
+                          "properties": {
+                            "stockIo": {
+                              "$ref": "#/components/schemas/PushStatus"
+                            },
+                            "stockMaster": {
+                              "$ref": "#/components/schemas/PushStatus"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "itemId": "itm_example_1",
+                    "branchId": "br_example_1",
+                    "movementId": "mov_example_1",
+                    "quantityOnHand": 100,
+                    "etims": {
+                      "stockIo": {
+                        "status": "ok"
+                      },
+                      "stockMaster": {
+                        "status": "ok"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/stock/transfers": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "transferStock",
+        "summary": "Transfer stock",
+        "description": "Moves stock of one item between two branches of the business. The call returns `201`.\n\nRequired scope: `stock:write`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockTransferRequest"
+              },
+              "examples": {
+                "transfer": {
+                  "summary": "Move 10 units",
+                  "value": {
+                    "itemId": "itm_example_1",
+                    "fromBranchId": "br_example_1",
+                    "toBranchId": "br_example_2",
+                    "quantity": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The transfer was recorded.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "itemId": {
+                          "type": "string"
+                        },
+                        "fromBranchId": {
+                          "type": "string"
+                        },
+                        "toBranchId": {
+                          "type": "string"
+                        },
+                        "referenceId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "from": {
+                          "type": "object",
+                          "properties": {
+                            "quantityOnHand": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "to": {
+                          "type": "object",
+                          "properties": {
+                            "quantityOnHand": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "itemId": "itm_example_1",
+                    "fromBranchId": "br_example_1",
+                    "toBranchId": "br_example_2",
+                    "referenceId": "transfer_example_1",
+                    "from": {
+                      "quantityOnHand": 90
+                    },
+                    "to": {
+                      "quantityOnHand": 10
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/sales": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "createSale",
+        "summary": "Issue a sale",
+        "description": "Validates the sale, submits it to KRA and returns the signed receipt. Prices are **tax inclusive**: the VAT split is worked out per line from the item's tax type, never from the request.\n\nThe status code tells you where the sale stands: `201` accepted by KRA, `202` still in flight (poll `GET /v1/sales/{id}`), `422` rejected or failed. Repeating the request with the same `Idempotency-Key` returns `200` with `Idempotent-Replayed: true` and files nothing new.\n\nRequired scope: `sales:write`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSaleRequest"
+              },
+              "examples": {
+                "simple": {
+                  "summary": "One line, with a buyer",
+                  "value": {
+                    "traderInvoiceNumber": "INV-2026-0001",
+                    "saleDate": "2026-10-02",
+                    "lines": [
+                      {
+                        "itemId": "itm_example_1",
+                        "quantity": 2,
+                        "unitPrice": 3500
+                      }
+                    ],
+                    "customer": {
+                      "name": "Example Customer Ltd",
+                      "pin": "P000000000X"
+                    },
+                    "paymentTypeCode": "01"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "KRA accepted the sale.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_1",
+                      "type": "sale",
+                      "status": "completed",
+                      "traderInvoiceNumber": "INV-2026-0001",
+                      "saleDate": "2026-10-02",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": 2,
+                          "unitPrice": 3500,
+                          "total": 7000,
+                          "taxableAmount": 6034.48,
+                          "taxAmount": 965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": 7000,
+                        "taxableAmount": 6034.48,
+                        "taxAmount": 965.52
+                      },
+                      "receipt": {
+                        "cuInvoiceNo": "KRACU0000000000/12 NS",
+                        "receiptNumber": 12,
+                        "receiptLabel": "NS",
+                        "scuId": "KRACU0000000000",
+                        "scuDate": "02/10/2026",
+                        "scuTime": "10:15:30",
+                        "totalReceiptCounter": "12",
+                        "signature": "AAAA-BBBB-CCCC",
+                        "internalData": "DDDD-EEEE-FFFF",
+                        "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                        "originalCuInvoiceNo": null
+                      },
+                      "originalSaleId": null,
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "A repeat of an earlier request. The original sale is returned and nothing is filed again.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              },
+              "Idempotent-Replayed": {
+                "$ref": "#/components/headers/IdempotentReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_1",
+                      "type": "sale",
+                      "status": "completed",
+                      "traderInvoiceNumber": "INV-2026-0001",
+                      "saleDate": "2026-10-02",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": 2,
+                          "unitPrice": 3500,
+                          "total": 7000,
+                          "taxableAmount": 6034.48,
+                          "taxAmount": 965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": 7000,
+                        "taxableAmount": 6034.48,
+                        "taxAmount": 965.52
+                      },
+                      "receipt": {
+                        "cuInvoiceNo": "KRACU0000000000/12 NS",
+                        "receiptNumber": 12,
+                        "receiptLabel": "NS",
+                        "scuId": "KRACU0000000000",
+                        "scuDate": "02/10/2026",
+                        "scuTime": "10:15:30",
+                        "totalReceiptCounter": "12",
+                        "signature": "AAAA-BBBB-CCCC",
+                        "internalData": "DDDD-EEEE-FFFF",
+                        "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                        "originalCuInvoiceNo": null
+                      },
+                      "originalSaleId": null,
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The sale has not reached a result yet. Poll `GET /v1/sales/{id}` or wait for the callback.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_1",
+                      "type": "sale",
+                      "status": "retrying",
+                      "traderInvoiceNumber": "INV-2026-0001",
+                      "saleDate": "2026-10-02",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": 2,
+                          "unitPrice": 3500,
+                          "total": 7000,
+                          "taxableAmount": 6034.48,
+                          "taxAmount": 965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": 7000,
+                        "taxableAmount": 6034.48,
+                        "taxAmount": 965.52
+                      },
+                      "receipt": null,
+                      "originalSaleId": null,
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The request conflicts with an existing document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "conflict": {
+                    "summary": "conflict",
+                    "value": {
+                      "error": {
+                        "code": "conflict",
+                        "message": "A sale with traderInvoiceNumber INV-2026-0001 already exists. Use a new number, or repeat the original request with its original Idempotency-Key."
+                      }
+                    }
+                  },
+                  "insufficient_stock": {
+                    "summary": "insufficient_stock",
+                    "value": {
+                      "error": {
+                        "code": "insufficient_stock",
+                        "message": "Insufficient stock for the item.",
+                        "sale": {
+                          "id": "sale_example_3",
+                          "status": "pending"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The document was not accepted by KRA, or could not be submitted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "validation_failed",
+                    "value": {
+                      "error": {
+                        "code": "validation_failed",
+                        "message": "The document failed validation.",
+                        "errors": [],
+                        "sale": {
+                          "id": "sale_example_3",
+                          "status": "pending"
+                        }
+                      }
+                    }
+                  },
+                  "item_not_registered": {
+                    "summary": "item_not_registered",
+                    "value": {
+                      "error": {
+                        "code": "item_not_registered",
+                        "message": "The item is not registered with KRA yet. Register the item with KRA (POST /v1/items/{id}/register), then POST /v1/sales/{id}/retry.",
+                        "sale": {
+                          "id": "sale_example_3",
+                          "status": "pending"
+                        }
+                      }
+                    }
+                  },
+                  "kra_rejected": {
+                    "summary": "kra_rejected",
+                    "value": {
+                      "error": {
+                        "code": "kra_rejected",
+                        "message": "The KRA reason for the rejection.",
+                        "sale": {
+                          "id": "sale_example_3",
+                          "status": "failed"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "listSales",
+        "summary": "List sales",
+        "description": "Lists sales and credit notes, newest first, a page at a time. Credit notes have `type: \"credit_note\"`.\n\nRequired scope: `sales:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/StartDate"
+          },
+          {
+            "$ref": "#/components/parameters/EndDate"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of sales.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sales": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Sale"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sales": [
+                      {
+                        "id": "sale_example_1",
+                        "type": "sale",
+                        "status": "completed",
+                        "traderInvoiceNumber": "INV-2026-0001",
+                        "saleDate": "2026-10-02",
+                        "paymentTypeCode": "01",
+                        "customer": {
+                          "name": "Example Customer Ltd",
+                          "pin": "P000000000X",
+                          "phone": null,
+                          "email": null
+                        },
+                        "lines": [
+                          {
+                            "id": "line_example_1",
+                            "itemId": "itm_example_1",
+                            "name": "500ml Cooking Oil",
+                            "description": "500ml Cooking Oil",
+                            "quantity": 2,
+                            "unitPrice": 3500,
+                            "total": 7000,
+                            "taxableAmount": 6034.48,
+                            "taxAmount": 965.52,
+                            "taxRate": 16,
+                            "taxTypeCode": "B"
+                          }
+                        ],
+                        "totals": {
+                          "total": 7000,
+                          "taxableAmount": 6034.48,
+                          "taxAmount": 965.52
+                        },
+                        "receipt": {
+                          "cuInvoiceNo": "KRACU0000000000/12 NS",
+                          "receiptNumber": 12,
+                          "receiptLabel": "NS",
+                          "scuId": "KRACU0000000000",
+                          "scuDate": "02/10/2026",
+                          "scuTime": "10:15:30",
+                          "totalReceiptCounter": "12",
+                          "signature": "AAAA-BBBB-CCCC",
+                          "internalData": "DDDD-EEEE-FFFF",
+                          "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                          "originalCuInvoiceNo": null
+                        },
+                        "originalSaleId": null,
+                        "error": null,
+                        "callback": null
+                      }
+                    ]
+                  },
+                  "pagination": {
+                    "nextCursor": null,
+                    "pageSize": 20
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "getSale",
+        "summary": "Get a sale",
+        "description": "Returns one sale or credit note, including the state of its result callback.\n\nRequired scope: `sales:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SaleId"
+          },
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sale.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_1",
+                      "type": "sale",
+                      "status": "completed",
+                      "traderInvoiceNumber": "INV-2026-0001",
+                      "saleDate": "2026-10-02",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": 2,
+                          "unitPrice": 3500,
+                          "total": 7000,
+                          "taxableAmount": 6034.48,
+                          "taxAmount": 965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": 7000,
+                        "taxableAmount": 6034.48,
+                        "taxAmount": 965.52
+                      },
+                      "receipt": {
+                        "cuInvoiceNo": "KRACU0000000000/12 NS",
+                        "receiptNumber": 12,
+                        "receiptLabel": "NS",
+                        "scuId": "KRACU0000000000",
+                        "scuDate": "02/10/2026",
+                        "scuTime": "10:15:30",
+                        "totalReceiptCounter": "12",
+                        "signature": "AAAA-BBBB-CCCC",
+                        "internalData": "DDDD-EEEE-FFFF",
+                        "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                        "originalCuInvoiceNo": null
+                      },
+                      "originalSaleId": null,
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}/receipt": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "getSaleReceipt",
+        "summary": "Download the receipt",
+        "description": "Returns the KRA receipt as a PDF. It is only available once KRA has accepted the document; before that the call is a `404`. Pass `copy=true` for a customer copy marked COPY. The response is a file, so the playground cannot show it: use `curl -o receipt.pdf`.\n\nRequired scope: `sales:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SaleId"
+          },
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          },
+          {
+            "name": "copy",
+            "in": "query",
+            "required": false,
+            "description": "Send `true` to get a copy marked COPY. Any other value gives the original.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The receipt PDF.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              },
+              "Content-Disposition": {
+                "description": "`attachment; filename=\"receipt-<id>.pdf\"`, or `receipt-copy-<id>.pdf` for a copy.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}/retry": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "retrySale",
+        "summary": "Retry a sale",
+        "description": "Submits a sale or credit note again when it did not reach KRA, or KRA rejected it, for example after you registered a missing item. There is no request body. If it fails again the response is a `422` `kra_rejected`.\n\nRequired scope: `sales:write`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SaleId"
+          },
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document after the retry.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_1",
+                      "type": "sale",
+                      "status": "completed",
+                      "traderInvoiceNumber": "INV-2026-0001",
+                      "saleDate": "2026-10-02",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": 2,
+                          "unitPrice": 3500,
+                          "total": 7000,
+                          "taxableAmount": 6034.48,
+                          "taxAmount": 965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": 7000,
+                        "taxableAmount": 6034.48,
+                        "taxAmount": 965.52
+                      },
+                      "receipt": {
+                        "cuInvoiceNo": "KRACU0000000000/12 NS",
+                        "receiptNumber": 12,
+                        "receiptLabel": "NS",
+                        "scuId": "KRACU0000000000",
+                        "scuDate": "02/10/2026",
+                        "scuTime": "10:15:30",
+                        "totalReceiptCounter": "12",
+                        "signature": "AAAA-BBBB-CCCC",
+                        "internalData": "DDDD-EEEE-FFFF",
+                        "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                        "originalCuInvoiceNo": null
+                      },
+                      "originalSaleId": null,
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "description": "KRA rejected the document again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "kra_rejected": {
+                    "summary": "kra_rejected",
+                    "value": {
+                      "error": {
+                        "code": "kra_rejected",
+                        "message": "The KRA reason for the rejection.",
+                        "sale": {
+                          "id": "sale_example_3",
+                          "status": "failed"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}/callback/resend": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "resendCallback",
+        "summary": "Resend the result callback",
+        "description": "Delivers the latest result of this sale to its `callbackUrl` once, now. Use it when your endpoint was down for longer than the automatic retries last. The response says how the attempt went. It is a `404` if the sale was created without a `callbackUrl` and a `409` if the sale has no result yet.\n\nRequired scope: `sales:write`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SaleId"
+          },
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The delivery state after the attempt.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "callback": {
+                          "$ref": "#/components/schemas/Callback"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "callback": {
+                      "url": "https://example.com/hooks/sync2books",
+                      "status": "delivered",
+                      "event": "sale.completed",
+                      "attempts": 1,
+                      "lastAttemptAt": "2026-10-02T10:16:00.000Z",
+                      "lastResponseStatus": 200,
+                      "lastError": null,
+                      "deliveredAt": "2026-10-02T10:16:00.000Z",
+                      "nextAttemptAt": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The sale has no result from KRA yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "conflict": {
+                    "summary": "conflict",
+                    "value": {
+                      "error": {
+                        "code": "conflict",
+                        "message": "This sale has no result from KRA yet; its callback is sent when it does."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/credit-notes": {
+      "post": {
+        "tags": [
+          "Credit notes"
+        ],
+        "operationId": "createCreditNote",
+        "summary": "Issue a credit note",
+        "description": "Reverses an accepted sale **in full**. The buyer and lines are copied from the sale, so you send only the sale id, your own number and a return date. A sale can be credited once. The status codes work as for `POST /v1/sales`: `201` accepted, `202` in flight, `422` rejected, and `200` with `Idempotent-Replayed: true` for a repeated request.\n\nRequired scope: `sales:write`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditNoteRequest"
+              },
+              "examples": {
+                "refund": {
+                  "summary": "Refund a sale",
+                  "value": {
+                    "traderInvoiceNumber": "CN-2026-0001",
+                    "returnDate": "2026-10-03",
+                    "saleId": "sale_example_1",
+                    "reason": "06"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "KRA accepted the credit note. The response key is `sale`, with `type: \"credit_note\"`.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_2",
+                      "type": "credit_note",
+                      "status": "completed",
+                      "traderInvoiceNumber": "CN-2026-0001",
+                      "saleDate": "2026-10-03",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": -2,
+                          "unitPrice": 3500,
+                          "total": -7000,
+                          "taxableAmount": -6034.48,
+                          "taxAmount": -965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": -7000,
+                        "taxableAmount": -6034.48,
+                        "taxAmount": -965.52
+                      },
+                      "receipt": {
+                        "cuInvoiceNo": "KRACU0000000000/13 NC",
+                        "receiptNumber": 13,
+                        "receiptLabel": "NC",
+                        "scuId": "KRACU0000000000",
+                        "scuDate": "02/10/2026",
+                        "scuTime": "10:15:30",
+                        "totalReceiptCounter": "13",
+                        "signature": "AAAA-BBBB-CCCC",
+                        "internalData": "DDDD-EEEE-FFFF",
+                        "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                        "originalCuInvoiceNo": "KRACU0000000000/12 NS"
+                      },
+                      "originalSaleId": "sale_example_1",
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "A repeat of an earlier request. The original credit note is returned and nothing is filed again.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              },
+              "Idempotent-Replayed": {
+                "$ref": "#/components/headers/IdempotentReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_2",
+                      "type": "credit_note",
+                      "status": "completed",
+                      "traderInvoiceNumber": "CN-2026-0001",
+                      "saleDate": "2026-10-03",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": -2,
+                          "unitPrice": 3500,
+                          "total": -7000,
+                          "taxableAmount": -6034.48,
+                          "taxAmount": -965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": -7000,
+                        "taxableAmount": -6034.48,
+                        "taxAmount": -965.52
+                      },
+                      "receipt": {
+                        "cuInvoiceNo": "KRACU0000000000/13 NC",
+                        "receiptNumber": 13,
+                        "receiptLabel": "NC",
+                        "scuId": "KRACU0000000000",
+                        "scuDate": "02/10/2026",
+                        "scuTime": "10:15:30",
+                        "totalReceiptCounter": "13",
+                        "signature": "AAAA-BBBB-CCCC",
+                        "internalData": "DDDD-EEEE-FFFF",
+                        "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                        "originalCuInvoiceNo": "KRACU0000000000/12 NS"
+                      },
+                      "originalSaleId": "sale_example_1",
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The credit note has not reached a result yet.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sale": {
+                          "$ref": "#/components/schemas/Sale"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "sale": {
+                      "id": "sale_example_2",
+                      "type": "credit_note",
+                      "status": "retrying",
+                      "traderInvoiceNumber": "CN-2026-0001",
+                      "saleDate": "2026-10-03",
+                      "paymentTypeCode": "01",
+                      "customer": {
+                        "name": "Example Customer Ltd",
+                        "pin": "P000000000X",
+                        "phone": null,
+                        "email": null
+                      },
+                      "lines": [
+                        {
+                          "id": "line_example_1",
+                          "itemId": "itm_example_1",
+                          "name": "500ml Cooking Oil",
+                          "description": "500ml Cooking Oil",
+                          "quantity": -2,
+                          "unitPrice": 3500,
+                          "total": -7000,
+                          "taxableAmount": -6034.48,
+                          "taxAmount": -965.52,
+                          "taxRate": 16,
+                          "taxTypeCode": "B"
+                        }
+                      ],
+                      "totals": {
+                        "total": -7000,
+                        "taxableAmount": -6034.48,
+                        "taxAmount": -965.52
+                      },
+                      "receipt": null,
+                      "originalSaleId": "sale_example_1",
+                      "error": null,
+                      "callback": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "The request conflicts with an existing document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "already_credited": {
+                    "summary": "already_credited",
+                    "value": {
+                      "error": {
+                        "code": "already_credited",
+                        "message": "This sale has already been credited by credit note CN-2026-0001. A credit note reverses a sale in full, so it can only be issued once.",
+                        "creditNoteId": "sale_example_2"
+                      }
+                    }
+                  },
+                  "credit_note_in_progress": {
+                    "summary": "credit_note_in_progress",
+                    "value": {
+                      "error": {
+                        "code": "credit_note_in_progress",
+                        "message": "Credit note CN-2026-0001 for this sale has not reached a result from KRA yet. Wait for it, or re-drive it with POST /v1/sales/{id}/retry, instead of issuing another.",
+                        "creditNoteId": "sale_example_2"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The document was not accepted by KRA, or could not be submitted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "not_a_sale": {
+                    "summary": "not_a_sale",
+                    "value": {
+                      "error": {
+                        "code": "not_a_sale",
+                        "message": "A credit note can only reverse a sale, not another credit note."
+                      }
+                    }
+                  },
+                  "sale_not_accepted": {
+                    "summary": "sale_not_accepted",
+                    "value": {
+                      "error": {
+                        "code": "sale_not_accepted",
+                        "message": "Only a sale KRA has accepted can be credited. Retry or fix the sale first."
+                      }
+                    }
+                  },
+                  "kra_rejected": {
+                    "summary": "kra_rejected",
+                    "value": {
+                      "error": {
+                        "code": "kra_rejected",
+                        "message": "The KRA reason for the rejection.",
+                        "sale": {
+                          "id": "sale_example_2",
+                          "type": "credit_note",
+                          "status": "failed"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/purchases/pull": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "operationId": "pullPurchases",
+        "summary": "Pull supplier invoices from KRA",
+        "description": "Fetches the supplier invoices KRA holds for the business and stores them, branch by branch. The response says how each branch went. Pulling again never changes an invoice's review status. If KRA returns nothing for every branch (all of them fail) the call is a `502` that carries the same per-branch report. The body is optional.\n\nRequired scope: `purchases:read`.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PullPurchasesRequest"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "KRA answered for at least one branch.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fetched": {
+                          "type": "integer"
+                        },
+                        "branches": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PurchasePullBranch"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "fetched": 3,
+                    "branches": [
+                      {
+                        "branchId": "br_example_1",
+                        "kraBhfId": "00",
+                        "displayName": "Head Office",
+                        "status": "ok",
+                        "fetched": 3,
+                        "error": null
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "description": "KRA did not return purchases for any branch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "upstream_error": {
+                    "summary": "upstream_error",
+                    "value": {
+                      "error": {
+                        "code": "upstream_error",
+                        "message": "KRA did not return purchases for any branch. Try again shortly.",
+                        "branches": [
+                          {
+                            "branchId": "br_example_1",
+                            "kraBhfId": "00",
+                            "displayName": "Head Office",
+                            "status": "failed",
+                            "fetched": 0,
+                            "error": "No response from KRA"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/purchases": {
+      "get": {
+        "tags": [
+          "Purchases"
+        ],
+        "operationId": "listPurchases",
+        "summary": "List supplier invoices",
+        "description": "Lists the supplier invoices stored for the business, newest first, a page at a time. Call `POST /v1/purchases/pull` first to fetch the latest from KRA. This API only reads them: confirming or rejecting an invoice is done in the compliance dashboard.\n\nRequired scope: `purchases:read`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Only invoices in this review status.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pulled",
+                "pending_review",
+                "confirmed",
+                "rejected"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/StartDate"
+          },
+          {
+            "$ref": "#/components/parameters/EndDate"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of supplier invoices.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "purchases": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Purchase"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "purchases": [
+                      {
+                        "id": "pur_example_1",
+                        "status": "pulled",
+                        "supplier": {
+                          "name": "Example Supplier Ltd",
+                          "pin": "P000000001Y"
+                        },
+                        "supplierInvoiceNumber": "1001",
+                        "invoiceDate": "2026-09-28",
+                        "branch": "Head Office",
+                        "totals": {
+                          "subtotal": 8620.69,
+                          "vat": 1379.31,
+                          "total": 10000
+                        },
+                        "lines": [
+                          {
+                            "description": "Cooking oil, 500ml",
+                            "hsCode": null,
+                            "quantity": 20,
+                            "unitPrice": 431.03,
+                            "taxRate": 16,
+                            "taxAmount": 1379.31,
+                            "total": 10000
+                          }
+                        ],
+                        "confirmationError": null
+                      }
+                    ]
+                  },
+                  "pagination": {
+                    "nextCursor": null,
+                    "pageSize": 20
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/purchases/{id}": {
+      "get": {
+        "tags": [
+          "Purchases"
+        ],
+        "operationId": "getPurchase",
+        "summary": "Get a supplier invoice",
+        "description": "Returns one stored supplier invoice.\n\nRequired scope: `purchases:read`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The supplier invoice id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/BusinessId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The supplier invoice.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "purchase": {
+                          "$ref": "#/components/schemas/Purchase"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "purchase": {
+                      "id": "pur_example_1",
+                      "status": "pulled",
+                      "supplier": {
+                        "name": "Example Supplier Ltd",
+                        "pin": "P000000001Y"
+                      },
+                      "supplierInvoiceNumber": "1001",
+                      "invoiceDate": "2026-09-28",
+                      "branch": "Head Office",
+                      "totals": {
+                        "subtotal": 8620.69,
+                        "vat": 1379.31,
+                        "total": 10000
+                      },
+                      "lines": [
+                        {
+                          "description": "Cooking oil, 500ml",
+                          "hsCode": null,
+                          "quantity": 20,
+                          "unitPrice": 431.03,
+                          "taxRate": 16,
+                          "taxAmount": 1379.31,
+                          "total": 10000
+                        }
+                      ],
+                      "confirmationError": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/lookups/classifications": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "operationId": "searchClassifications",
+        "summary": "Search item classifications",
+        "description": "Searches KRA's item classification codes. Send the `code` you choose as `classificationCode` when you create an item. These are KRA's own tables, the same for every business, so no business is involved.\n\nRequired scope: `lookups:read`.",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "description": "Text to search for in the code or name.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "description": "Only classifications at this level of KRA's hierarchy.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching classifications.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "classifications": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Classification"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "classifications": [
+                      {
+                        "code": "50150000",
+                        "name": "Edible oils and fats",
+                        "level": 2,
+                        "taxTypeCode": "B"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/lookups/classifications/{code}": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "operationId": "getClassification",
+        "summary": "Get an item classification",
+        "description": "Returns one classification by its code. An unknown code is a `404`.\n\nRequired scope: `lookups:read`.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "description": "The classification code.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The classification.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "classification": {
+                          "$ref": "#/components/schemas/Classification"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "classification": {
+                      "code": "50150000",
+                      "name": "Edible oils and fats",
+                      "level": 2,
+                      "taxTypeCode": "B"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/lookups/code-classes": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "operationId": "listCodeClasses",
+        "summary": "List code groups",
+        "description": "Lists KRA's code groups, for example `10` unit of quantity, `17` packaging unit and `04` tax type. Pass a group to `GET /v1/lookups/codes` to see its values.\n\nRequired scope: `lookups:read`.",
+        "responses": {
+          "200": {
+            "description": "The code groups.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "codeClasses": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/CodeClass"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "codeClasses": [
+                      {
+                        "code": "10",
+                        "name": "Quantity Unit",
+                        "description": null
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/lookups/codes": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "operationId": "searchCodes",
+        "summary": "Search KRA codes",
+        "description": "Searches the codes within a group: quantity units, packaging units, tax types, payment types and more. Use `GET /v1/lookups/code-classes` to see the groups.\n\nRequired scope: `lookups:read`.",
+        "parameters": [
+          {
+            "name": "codeClass",
+            "in": "query",
+            "required": false,
+            "description": "The code group, for example `10` for quantity units or `17` for packaging units.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "10"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "description": "Text to search for in the code or name.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching codes.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimitReset"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "codes": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Code"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "codes": [
+                      {
+                        "codeClass": "10",
+                        "code": "U",
+                        "name": "Pieces / item",
+                        "description": null
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "saleResult": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "operationId": "saleResultCallback",
+        "summary": "Result callback (sent by us)",
+        "description": "When you send a `callbackUrl` with a sale or credit note, Sync2Books sends the result there as a `POST` once KRA accepts or rejects it. Reply with any `2xx` within 10 seconds. The call is **not signed**: treat it as a notification and confirm with `GET /v1/sales/{id}` before you act on it. See [Result callbacks](/etims-callbacks).",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallbackPayload"
+              },
+              "example": {
+                "id": "sale_example_1:ACCEPTED:1",
+                "event": "sale.completed",
+                "occurredAt": "2026-10-02T10:15:31.000Z",
+                "data": {
+                  "sale": {
+                    "id": "sale_example_1",
+                    "type": "sale",
+                    "status": "completed",
+                    "traderInvoiceNumber": "INV-2026-0001",
+                    "saleDate": "2026-10-02",
+                    "paymentTypeCode": "01",
+                    "customer": {
+                      "name": "Example Customer Ltd",
+                      "pin": "P000000000X",
+                      "phone": null,
+                      "email": null
+                    },
+                    "lines": [
+                      {
+                        "id": "line_example_1",
+                        "itemId": "itm_example_1",
+                        "name": "500ml Cooking Oil",
+                        "description": "500ml Cooking Oil",
+                        "quantity": 2,
+                        "unitPrice": 3500,
+                        "total": 7000,
+                        "taxableAmount": 6034.48,
+                        "taxAmount": 965.52,
+                        "taxRate": 16,
+                        "taxTypeCode": "B"
+                      }
+                    ],
+                    "totals": {
+                      "total": 7000,
+                      "taxableAmount": 6034.48,
+                      "taxAmount": 965.52
+                    },
+                    "receipt": {
+                      "cuInvoiceNo": "KRACU0000000000/12 NS",
+                      "receiptNumber": 12,
+                      "receiptLabel": "NS",
+                      "scuId": "KRACU0000000000",
+                      "scuDate": "02/10/2026",
+                      "scuTime": "10:15:30",
+                      "totalReceiptCounter": "12",
+                      "signature": "AAAA-BBBB-CCCC",
+                      "internalData": "DDDD-EEEE-FFFF",
+                      "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE",
+                      "originalCuInvoiceNo": null
+                    },
+                    "originalSaleId": null,
+                    "error": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any `2xx` response marks the delivery as received."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Your API key, for example `cmp_sk_test_xxxxxxxxxxxxxxxxxxxxxxxx`. Create one on the Integrations page of the compliance dashboard."
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "cmp_sk_...",
+        "description": "The same key, sent as `Authorization: Bearer <key>`. Use this if your HTTP client makes custom headers awkward."
+      }
+    },
+    "headers": {
+      "RateLimitLimit": {
+        "description": "Requests allowed per minute for your application.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "RateLimitRemaining": {
+        "description": "Requests left in the current one-minute window.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "RateLimitReset": {
+        "description": "Seconds until the current window resets. This is a number of seconds, not a Unix timestamp.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "IdempotentReplayed": {
+        "description": "Always `true`. Present only when the response is an earlier result returned for a repeated `Idempotency-Key`.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "true"
+          ]
+        }
+      }
+    },
+    "parameters": {
+      "BusinessId": {
+        "name": "businessId",
+        "in": "query",
+        "required": false,
+        "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "BusinessPath": {
+        "name": "businessId",
+        "in": "path",
+        "required": true,
+        "description": "The business id. A business-bound key must pass its own business id.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "A unique value you choose for this document, 8 to 128 characters: letters, digits and `. _ : -`. Repeating the request with the same key returns the original result instead of filing a second document. Strongly recommended.",
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "example": "order-10042-attempt-1"
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "description": "The `pagination.nextCursor` value from the previous page, passed back unchanged.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "required": false,
+        "description": "Items per page, 1 to 100. A value outside that range is a 400, not clamped.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "StartDate": {
+        "name": "startDate",
+        "in": "query",
+        "required": false,
+        "description": "Only documents on or after this date, as `YYYY-MM-DD`.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "EndDate": {
+        "name": "endDate",
+        "in": "query",
+        "required": false,
+        "description": "Only documents on or before this date, as `YYYY-MM-DD`.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "SaleId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "The id of a sale or credit note, as returned in `data.sale.id`.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum rows to return, 1 to 200.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request is malformed. The message names the first field that is wrong.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "invalid_request": {
+                "summary": "invalid_request",
+                "value": {
+                  "error": {
+                    "code": "invalid_request",
+                    "message": "lines[0].quantity must be greater than 0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "The key is missing, malformed, revoked, expired or belongs to a suspended application. The response never says which.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "invalid_api_key": {
+                "summary": "invalid_api_key",
+                "value": {
+                  "error": {
+                    "code": "invalid_api_key",
+                    "message": "Invalid API key"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The key is valid but may not do this: a missing scope, a business the key is not limited to, or a test key used against a production business (or the reverse).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "missing_scope": {
+                "summary": "missing_scope",
+                "value": {
+                  "error": {
+                    "code": "forbidden",
+                    "message": "This API key is missing the sales:write scope"
+                  }
+                }
+              },
+              "other_business": {
+                "summary": "other_business",
+                "value": {
+                  "error": {
+                    "code": "forbidden",
+                    "message": "This API key is limited to a single business and cannot act for another one."
+                  }
+                }
+              },
+              "environment_mismatch": {
+                "summary": "environment_mismatch",
+                "value": {
+                  "error": {
+                    "code": "forbidden",
+                    "message": "This is a test API key and Example Business Ltd is a production business. Use the key for that environment."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The id does not exist, or belongs to another business. The two cases are deliberately indistinguishable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "not_found": {
+                "summary": "not_found",
+                "value": {
+                  "error": {
+                    "code": "not_found",
+                    "message": "Sale sale_example_9 not found"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "The application has used its requests for this minute. Wait `Retry-After` seconds.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "$ref": "#/components/headers/RateLimitLimit"
+          },
+          "X-RateLimit-Remaining": {
+            "$ref": "#/components/headers/RateLimitRemaining"
+          },
+          "X-RateLimit-Reset": {
+            "$ref": "#/components/headers/RateLimitReset"
+          },
+          "Retry-After": {
+            "description": "Seconds to wait before trying again.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "rate_limited": {
+                "summary": "rate_limited",
+                "value": {
+                  "error": {
+                    "code": "rate_limited",
+                    "message": "Rate limit of 120 requests per minute exceeded. Retry in 23s."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": true,
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "A stable, machine-readable code. Branch on this. See [Errors & Troubleshooting](/etims-errors) for the full list.",
+                "examples": [
+                  "invalid_request",
+                  "kra_rejected",
+                  "already_credited"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "description": "A human-readable explanation. The wording can change; do not parse it."
+              }
+            },
+            "description": "Some errors carry extra fields next to `code` and `message`, for example `sale`, `item`, `errors`, `creditNoteId` or `branches`."
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "required": [
+          "nextCursor",
+          "pageSize"
+        ],
+        "properties": {
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Pass this as `cursor` to get the next page. `null` on the last page."
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "The page size used."
+          }
+        }
+      },
+      "Branch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kraBhfId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The branch id KRA knows the branch by."
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tradeAddressLine1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tradeCity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Business": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "environment": {
+            "$ref": "#/components/schemas/Environment"
+          }
+        }
+      },
+      "Environment": {
+        "type": "string",
+        "enum": [
+          "SANDBOX",
+          "PRODUCTION"
+        ],
+        "description": "`SANDBOX` is the KRA test environment. `PRODUCTION` files real tax documents."
+      },
+      "TaxCategory": {
+        "type": "string",
+        "enum": [
+          "VAT_STANDARD",
+          "VAT_ZERO",
+          "EXEMPT",
+          "OTHER",
+          "VAT_8"
+        ],
+        "description": "`VAT_STANDARD` is KRA tax type B (16%), `VAT_ZERO` is C (0%), `EXEMPT` is A, `OTHER` is D and `VAT_8` is E (8%)."
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The item id. Use it on sale lines and stock movements."
+          },
+          "externalId": {
+            "type": "string",
+            "description": "Your own identifier for the item."
+          },
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxCategory": {
+            "$ref": "#/components/schemas/TaxCategory"
+          },
+          "taxTypeCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The KRA tax type letter the category maps to."
+          },
+          "productTypeCode": {
+            "type": "string",
+            "enum": [
+              "1",
+              "2",
+              "3"
+            ],
+            "description": "`1` raw material, `2` finished product, `3` service."
+          },
+          "classificationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "packagingUnitCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitPrice": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The default unit price."
+          },
+          "stockTracked": {
+            "type": "boolean",
+            "description": "Whether sales of this item deduct stock."
+          },
+          "registrationStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "REGISTERED",
+              "FAILED"
+            ],
+            "description": "Only a `REGISTERED` item can be sold."
+          },
+          "needs": {
+            "type": "object",
+            "description": "Why an item is not yet ready to register.",
+            "properties": {
+              "productType": {
+                "type": "boolean",
+                "description": "`true` when `productTypeCode` is missing."
+              },
+              "classificationMapping": {
+                "type": "boolean",
+                "description": "`true` when `classificationCode` is missing."
+              }
+            }
+          }
+        }
+      },
+      "CreateItemRequest": {
+        "type": "object",
+        "required": [
+          "externalId",
+          "name",
+          "taxCategory",
+          "productTypeCode"
+        ],
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Your own identifier. Sending it again updates the same item."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "sku": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "taxCategory": {
+            "$ref": "#/components/schemas/TaxCategory"
+          },
+          "productTypeCode": {
+            "type": "string",
+            "enum": [
+              "1",
+              "2",
+              "3"
+            ],
+            "description": "A string, not a number. `1` raw material, `2` finished product, `3` service."
+          },
+          "classificationCode": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "The KRA item classification. Required before the item can be registered. Search with `GET /v1/lookups/classifications`."
+          },
+          "unitCode": {
+            "type": "string",
+            "maxLength": 2,
+            "description": "KRA quantity unit code, for example `U`. See `GET /v1/lookups/codes?codeClass=10`."
+          },
+          "packagingUnitCode": {
+            "type": "string",
+            "maxLength": 2,
+            "description": "KRA packaging unit code, for example `NT`. See `GET /v1/lookups/codes?codeClass=17`."
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The default unit price."
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "RegisterItemRequest": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "description": "The branch to register the item for. Accepts the branch `id` or its `kraBhfId`. Defaults to the business's first branch."
+          },
+          "force": {
+            "type": "boolean",
+            "description": "Set `true` to register again an item KRA already has."
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "PushStatus": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "skipped",
+              "failed"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the step was skipped or failed."
+          }
+        }
+      },
+      "StockAdjustmentRequest": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "action",
+          "quantity"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "branchId": {
+            "type": "string",
+            "description": "Defaults to the business's first branch."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "ADD",
+              "DEDUCT"
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "referenceId": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Your own reference for the movement."
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "StockTransferRequest": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "fromBranchId",
+          "toBranchId",
+          "quantity"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "fromBranchId": {
+            "type": "string"
+          },
+          "toBranchId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "referenceId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pin": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "CustomerInput": {
+        "type": "object",
+        "description": "The buyer. Optional.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "pin": {
+            "type": "string",
+            "maxLength": 11,
+            "description": "The buyer's KRA PIN."
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "SaleLineInput": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "quantity",
+          "unitPrice"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "A registered item."
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The price the customer pays per unit, tax included."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "CallbackUrl": {
+        "type": "string",
+        "maxLength": 2048,
+        "description": "Where to send the result. An absolute `https` URL on a public host, with no credentials in it. See [Result callbacks](/etims-callbacks)."
+      },
+      "CreateSaleRequest": {
+        "type": "object",
+        "required": [
+          "traderInvoiceNumber",
+          "saleDate",
+          "lines"
+        ],
+        "properties": {
+          "traderInvoiceNumber": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Your own number for this sale. Unique per business."
+          },
+          "saleDate": {
+            "type": "string",
+            "format": "date",
+            "description": "As `YYYY-MM-DD`."
+          },
+          "lines": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/SaleLineInput"
+            }
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerInput"
+          },
+          "paymentTypeCode": {
+            "type": "string",
+            "maxLength": 2,
+            "default": "01",
+            "description": "A KRA payment type code. See [Codes & Values](/etims-codes#payment-type-sales)."
+          },
+          "branchId": {
+            "type": "string",
+            "description": "Defaults to the business's first branch."
+          },
+          "callbackUrl": {
+            "$ref": "#/components/schemas/CallbackUrl"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "CreditNoteRequest": {
+        "type": "object",
+        "required": [
+          "traderInvoiceNumber",
+          "returnDate",
+          "saleId"
+        ],
+        "properties": {
+          "traderInvoiceNumber": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Your own number for the credit note."
+          },
+          "returnDate": {
+            "type": "string",
+            "format": "date",
+            "description": "As `YYYY-MM-DD`."
+          },
+          "saleId": {
+            "type": "string",
+            "description": "The id of the accepted sale to reverse."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "01",
+              "02",
+              "03",
+              "04",
+              "05",
+              "06"
+            ],
+            "default": "06",
+            "description": "`01` missing quantity, `02` missing data, `03` damaged, `04` wasted, `05` raw material shortage, `06` refund."
+          },
+          "callbackUrl": {
+            "$ref": "#/components/schemas/CallbackUrl"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "Callback": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "description": "Delivery state of the result callback. `null` when the sale was created without a `callbackUrl`.",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "awaiting_outcome",
+              "pending",
+              "delivered",
+              "failed"
+            ]
+          },
+          "event": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "sale.completed",
+              "sale.failed",
+              null
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "lastAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lastResponseStatus": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "lastError": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deliveredAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "SaleLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number",
+            "description": "Tax-inclusive line total."
+          },
+          "taxableAmount": {
+            "type": "number",
+            "description": "The part of the total that is subject to tax."
+          },
+          "taxAmount": {
+            "type": "number"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "The VAT rate in percent."
+          },
+          "taxTypeCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The KRA tax type letter of the item."
+          }
+        }
+      },
+      "Receipt": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "description": "The KRA-signed receipt values. `null` until KRA has accepted the document.",
+        "properties": {
+          "cuInvoiceNo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The control unit invoice number printed on the receipt."
+          },
+          "receiptNumber": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "receiptLabel": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "For example `NS` for a sale and `NC` for a credit note."
+          },
+          "scuId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Printed on the receipt."
+          },
+          "scuDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Printed on the receipt, as `DD/MM/YYYY`."
+          },
+          "scuTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Printed on the receipt, as `hh:mm:ss`."
+          },
+          "totalReceiptCounter": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signature": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "internalData": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Printed on the receipt."
+          },
+          "verificationUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The KRA page that verifies the receipt. The QR code on the PDF points here."
+          },
+          "originalCuInvoiceNo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "On a credit note, the CU invoice number of the sale it reverses."
+          }
+        }
+      },
+      "Sale": {
+        "type": "object",
+        "description": "A sale or a credit note. On a credit note the amounts are negative.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "credit_note"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready_to_submit",
+              "retrying",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "description": "`completed` means KRA accepted the document. `pending`, `ready_to_submit` and `retrying` are still in flight."
+          },
+          "traderInvoiceNumber": {
+            "type": "string"
+          },
+          "saleDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "paymentTypeCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SaleLine"
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "taxableAmount": {
+                "type": "number"
+              },
+              "taxAmount": {
+                "type": "number"
+              }
+            }
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/Receipt"
+          },
+          "originalSaleId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "On a credit note, the id of the sale it reverses."
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the document failed. Set only when `status` is `failed`."
+          },
+          "callback": {
+            "$ref": "#/components/schemas/Callback"
+          }
+        }
+      },
+      "CallbackPayload": {
+        "type": "object",
+        "description": "The body sent to your `callbackUrl`. It is not signed: confirm with `GET /v1/sales/{id}` before acting on it.",
+        "required": [
+          "id",
+          "event",
+          "occurredAt",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable across retries of the same result. Use it to ignore duplicates."
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "sale.completed",
+              "sale.failed"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "sale": {
+                "$ref": "#/components/schemas/Sale"
+              }
+            }
+          }
+        }
+      },
+      "PullPurchasesRequest": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "description": "Pull for one branch only. Defaults to every branch of the business."
+          },
+          "businessId": {
+            "type": "string",
+            "description": "The business to act for. Required for organisation-wide keys; omit it for a business-bound key. List the ids you can use with `GET /v1/businesses`."
+          }
+        }
+      },
+      "PurchasePullBranch": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string"
+          },
+          "kraBhfId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "failed"
+            ]
+          },
+          "fetched": {
+            "type": "integer",
+            "description": "Invoices KRA returned for this branch. `0` when the branch failed."
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Purchase": {
+        "type": "object",
+        "description": "A supplier invoice KRA holds against the business.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pulled",
+              "pending_review",
+              "confirmed",
+              "rejected"
+            ]
+          },
+          "supplier": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "pin": {
+                "type": "string"
+              }
+            }
+          },
+          "supplierInvoiceNumber": {
+            "type": "string"
+          },
+          "invoiceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "branch": {
+            "type": "string",
+            "description": "The name of the branch the invoice belongs to."
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "subtotal": {
+                "type": "number"
+              },
+              "vat": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              }
+            }
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "hsCode": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "quantity": {
+                  "type": "number"
+                },
+                "unitPrice": {
+                  "type": "number"
+                },
+                "taxRate": {
+                  "type": "number"
+                },
+                "taxAmount": {
+                  "type": "number"
+                },
+                "total": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "confirmationError": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the last attempt to confirm the invoice to KRA failed, if it did."
+          }
+        }
+      },
+      "Classification": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The value to send as `classificationCode`."
+          },
+          "name": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer",
+            "description": "Position in KRA's hierarchy. 1 is the broadest."
+          },
+          "taxTypeCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "CodeClass": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Code": {
+        "type": "object",
+        "properties": {
+          "codeClass": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

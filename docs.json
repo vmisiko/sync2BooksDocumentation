@@ -57,23 +57,6 @@
             ]
           },
           {
-            "group": "Compliance API — eTIMS (Kenya)",
-            "pages": [
-              "etims-overview",
-              "etims-codes",
-              "etims-errors",
-              "etims-architecture",
-              "ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY"
-            ]
-          },
-          {
-            "group": "Compliance API — Reference (Kenya)",
-            "pages": [
-              "etims-item-attributes",
-              "etims-item-classification-codes"
-            ]
-          },
-          {
             "group": "Link component",
             "pages": [
               "link-integration"
@@ -91,6 +74,68 @@
           {
             "group": "Endpoints",
             "openapi": "/openapi/accounting.json"
+          }
+        ]
+      },
+      {
+        "tab": "eTIMS API",
+        "groups": [
+          {
+            "group": "Start here",
+            "pages": [
+              "etims-overview",
+              "etims-quickstart",
+              "etims-authentication",
+              "etims-concepts"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "etims-guide-items",
+              "etims-guide-sales",
+              "etims-guide-credit-notes",
+              "etims-guide-stock",
+              "etims-guide-purchases",
+              "etims-callbacks"
+            ]
+          },
+          {
+            "group": "API conventions",
+            "pages": [
+              "etims-idempotency",
+              "etims-errors",
+              "etims-pagination",
+              "etims-rate-limits"
+            ]
+          },
+          {
+            "group": "Reference data",
+            "pages": [
+              "etims-codes",
+              "etims-item-attributes",
+              "etims-item-classification-codes"
+            ]
+          },
+          {
+            "group": "Going live",
+            "pages": [
+              "etims-going-live",
+              "ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY",
+              "etims-architecture"
+            ]
+          },
+          {
+            "group": "API reference",
+            "pages": ["etims-api-reference"]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": "/openapi/etims.json"
+          },
+          {
+            "group": "Resources",
+            "pages": ["etims-changelog"]
           }
         ]
       }
