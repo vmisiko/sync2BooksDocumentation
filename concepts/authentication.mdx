@@ -4,8 +4,13 @@ description: "How Sync2Books authenticates API requests: your API key, the optio
 ---
 
 Every Sync2Books API request authenticates with an **API key** sent in the `X-API-Key`
-header. This single mechanism is shared across **all** products — Expenses, eTIMS
-compliance, sync, attachments. Learn it once and it applies everywhere.
+header. This single mechanism is shared across the whole Accounting API — Expenses, bills,
+invoices, sync, attachments. Learn it once and it applies everywhere in that API.
+
+<Note>
+The **eTIMS (Compliance) API** has its own keys and authentication, and does not use the
+credentials on this page. See [eTIMS Authentication & API keys](/etims-authentication).
+</Note>
 
 <Note>
 There is **no `/v1` path prefix** and no separate auth endpoint. You authenticate
@@ -72,7 +77,7 @@ message = METHOD + PATH + BODY + TIMESTAMP
 ```
 
 - `METHOD` — uppercase HTTP method, e.g. `POST`
-- `PATH` — request path, e.g. `/companies/abc/integrations/etims/sales`
+- `PATH` — request path, e.g. `/expenses/{connectionId}`
 - `BODY` — the exact JSON request body (empty string for GET)
 - `TIMESTAMP` — the same value you send in `X-Timestamp`
 

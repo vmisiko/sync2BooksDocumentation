@@ -3,28 +3,32 @@ title: "Sync2Books documentation"
 description: "One API to sync financial data to accounting systems and keep Kenyan businesses tax-compliant with KRA eTIMS."
 ---
 
-Sync2Books is two products behind one API key: an **Accounting API** that syncs financial
+Sync2Books is two separate products: an **Accounting API** that syncs financial
 data to accounting systems (QuickBooks Online, Xero, Sage, Dynamics 365 Business Central, Odoo),
-and a **Compliance API** that keeps your Kenyan customers tax-compliant with KRA eTIMS —
-without building against each system yourself.
+and a **Compliance API** (eTIMS) that keeps your Kenyan customers tax-compliant with KRA —
+without building against each system yourself. Each has its own API keys and its own docs.
 
 <Card title="New here? Start with: which API do I need?" icon="signs-post" href="/which-api">
   A two-minute read that separates the two products so the rest of these docs make sense. **Read this first.**
 </Card>
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="bolt" href="/quickstart">
+  <Card title="Accounting API quickstart" icon="bolt" href="/quickstart">
     Get an API key, connect a system, and make your first call in five minutes.
   </Card>
-  <Card title="Authentication" icon="key" href="/concepts/authentication">
-    The API key, the optional request signature, and your client secret — shared by every product.
+  <Card title="eTIMS quickstart" icon="file-invoice" href="/etims-quickstart">
+    From a test key to your first KRA-signed receipt and credit note.
+  </Card>
+  <Card title="Accounting API authentication" icon="key" href="/concepts/authentication">
+    The API key, the optional request signature, and your client secret.
   </Card>
 </CardGroup>
 
 ## Start with the core concepts
 
-Everything below is built on the same foundation. Learn it once; it applies to
-every product.
+These concepts apply to the **Accounting API**. The eTIMS API has its own
+authentication and conventions: see [Authentication & API keys](/etims-authentication)
+and [Core concepts](/etims-concepts).
 
 <CardGroup cols={2}>
   <Card title="Companies & connections" icon="building" href="/concepts/companies-and-connections">
@@ -52,7 +56,7 @@ every product.
   <Card title="Compliance API — eTIMS (Kenya)" icon="file-invoice" href="/etims-overview">
     Register items, manage stock, and issue KRA-signed sales and credit notes.
 
-    **Reference:** [eTIMS Compliance docs](/etims-overview)
+    **Reference:** [eTIMS API docs](/etims-api-reference)
   </Card>
 </CardGroup>
 

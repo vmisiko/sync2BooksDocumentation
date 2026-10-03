@@ -3,9 +3,10 @@ title: "Companies & connections"
 description: "The shared object model behind every Sync2Books product: organizations, applications, companies, and connections."
 ---
 
-Every Sync2Books product is built on the same small set of objects. Whether you are
-syncing expenses to QuickBooks or pushing sales to KRA eTIMS, you work with the same
-**companies** and **connections**.
+The Accounting API is built on a small set of objects. When you sync expenses to
+QuickBooks, Xero or another accounting system, you work with **companies** and
+**connections**. (The eTIMS API has its own model of businesses and branches: see
+[eTIMS core concepts](/etims-concepts#businesses-and-branches).)
 
 ## The object model
 
@@ -13,8 +14,8 @@ syncing expenses to QuickBooks or pushing sales to KRA eTIMS, you work with the 
 Organization ── Application ──┬── Credential (Development: sk_development_…)
    (you)        (your product)└── Credential (Production:  sk_production_…)
                      │
-                     └── Company ──┬── Connection (QuickBooks / Xero / Sage)
-                       (your SMB    └── Connection (eTIMS — Kenya compliance)
+                     └── Company ──── Connection (QuickBooks / Xero / Sage …)
+                       (your SMB
                         customer)
 ```
 
@@ -23,11 +24,11 @@ Organization ── Application ──┬── Credential (Development: sk_deve
 | **Organization** | Your business on Sync2Books. |
 | **Application** | Your product or integration. Owns the API keys. |
 | **Company** | One of your SMB customers. Everything syncable is scoped to a company. |
-| **Connection** | A link from a company to an external system (an accounting platform, or eTIMS). |
+| **Connection** | A link from a company to an external system (an accounting platform). |
 
 <Note>
-A single company can hold **multiple connections** — e.g. QuickBooks for expenses
-*and* an eTIMS connection for Kenyan tax compliance — at the same time.
+A single company can hold **multiple connections** — e.g. QuickBooks and Odoo —
+at the same time.
 </Note>
 
 ## Create a company
@@ -83,12 +84,11 @@ curl -X GET "https://api.sync2books.com/connections/company/{companyId}" \
   -H "X-API-Key: {apiKey}"
 ```
 
-## Connect eTIMS (Kenya compliance)
+## Kenyan tax compliance (eTIMS)
 
-For Kenyan tax compliance, the company is connected to **eTIMS** instead of (or in
-addition to) an accounting platform. This is normally done **once, in the dashboard**
-— you enter the KRA PIN, OSCU device serial, and branch details, and Sync2Books runs
-the device onboarding for you. See the [eTIMS overview](/etims-overview).
+eTIMS is a separate product with its own dashboard, API keys and objects. You register
+a business there once, in the compliance dashboard, and its API acts on **businesses** and
+**branches** rather than companies. See the [eTIMS API](/etims-overview) docs.
 
 ## Next steps
 

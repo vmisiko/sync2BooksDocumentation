@@ -227,7 +227,7 @@
             "id": { "type": "string" },
             "connectionId": { "type": "string" },
             "syncStatus": { "type": "string", "enum": ["pending", "syncing", "synced", "failed"] },
-            "etimsReceiptAvailable": { "type": "boolean", "description": "Whether a KRA-signed receipt PDF exists for this invoice — see [Sales & Credit Notes](/etims-sales) if this company also uses the Compliance API." },
+            "etimsReceiptAvailable": { "type": "boolean", "description": "Whether a KRA-signed receipt PDF exists for this invoice — see [Sales](/etims-guide-sales) if this company also uses the eTIMS API." },
             "createdAt": { "type": "string", "format": "date-time" },
             "updatedAt": { "type": "string", "format": "date-time" }
           } }
