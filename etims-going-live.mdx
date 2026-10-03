@@ -1,0 +1,70 @@
+---
+title: "Going live"
+description: "A checklist for moving an eTIMS integration from the KRA sandbox to production, where every sale is a real tax document."
+---
+
+import { baseUrl } from "/snippets/etims-base-url.mdx";
+
+Until now you have used a **test** key against a **sandbox** business. Going live means using a **live** key against
+a **production** business, where each sale is a real tax document filed with KRA. Work through this list in order.
+
+<Warning>
+  A live sale cannot be deleted. If one is wrong, the only remedy is a [credit note](/etims-guide-credit-notes),
+  which is itself a tax document. Test thoroughly in the sandbox first.
+</Warning>
+
+<Steps>
+  <Step title="Onboard the business for production">
+    In the compliance dashboard, add the business as a **production** business with its KRA PIN, branch and device
+    details. Production values come from KRA's own onboarding. See
+    [eTIMS as a Third-Party Integrator (OSCU)](/ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY) for where each one comes from.
+    You do not need to certify with KRA yourself.
+  </Step>
+
+  <Step title="Create a live key">
+    On the production business's **Integrations** page, create a key in **Live** mode. It is a different key from your
+    test key, and a test key can never act on a production business. See
+    [Authentication & API keys](/etims-authentication).
+  </Step>
+
+  <Step title="Register your items again">
+    A production business is a separate business from your sandbox one, with its own items. Create and register your
+    items for it with `POST /v1/items` and `POST /v1/items/{id}/register`. The item `id` values will be different,
+    so do not reuse ids you stored from the sandbox.
+  </Step>
+
+  <Step title="Add opening stock again">
+    Add the real opening stock for goods with `POST /v1/stock/adjustments`. Stock you added in the sandbox is not
+    there.
+  </Step>
+
+  <Step title="Switch your configuration">
+    Replace the key with the live key, and, if you use callbacks, check that every `callbackUrl` is a public `https`
+    address. The base URL does not change: it is still <code>{baseUrl}</code>.
+  </Step>
+
+  <Step title="Run a smoke test">
+    Issue one real, low-value sale. Open the `receipt.verificationUrl` and confirm KRA shows the receipt. Download the
+    PDF and check it. Credit the sale if it should not stand.
+  </Step>
+
+  <Step title="Check you are operationally ready">
+    - Every `POST` of a sale or credit note sends an `Idempotency-Key`.
+    - Your code handles `201`, `202`, `422` and `5xx` responses, and a `429`.
+    - You read the rate-limit headers, and have asked support for a higher limit if you will need one.
+    - Keys have an expiry or a rotation plan, and live keys are held in a secret store.
+    - You alert on `sale.failed` callbacks, and your callback receiver re-fetches the sale before acting.
+  </Step>
+</Steps>
+
+## Support
+
+For help going live, write to [support@sync2books.com](mailto:support@sync2books.com). Include the business, the sale
+or item `id` and the error body, and never the key. Service status is at
+[status.sync2books.com](https://status.sync2books.com).
+
+## Read next
+
+- [Technology Architecture](/etims-architecture): how fiscal data reaches KRA, and how the platform is certified
+- [Errors & Troubleshooting](/etims-errors): what to do when something is rejected
+- [Result callbacks](/etims-callbacks): hearing about failures as they happen

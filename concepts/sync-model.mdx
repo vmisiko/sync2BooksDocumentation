@@ -4,18 +4,19 @@ description: "How Sync2Books pushes data to external systems asynchronously, and
 ---
 
 Most write operations in Sync2Books are **asynchronous**. When you submit data —
-an expense, an eTIMS sale, a stock adjustment — Sync2Books accepts it, returns a
+an expense, a bill, an invoice — Sync2Books accepts it, returns a
 **`syncBatchId`** immediately, and pushes it to the external system in the
 background. You confirm the outcome by reading the batch or the entity back.
 
-This model is shared across products: the same batch/status vocabulary applies to
-Expenses and to eTIMS.
+The same batch/status vocabulary applies to every write in the Accounting API. (The eTIMS API
+works differently: a sale is answered with its KRA result directly. See
+[eTIMS core concepts](/etims-concepts).)
 
 ## The flow
 
 ```text
 1. You submit            POST /expenses/{connectionId}      ─▶  { syncBatchId }
-2. Sync2Books pushes     (background) ──▶ QuickBooks / Xero / Sage / KRA eTIMS
+2. Sync2Books pushes     (background) ──▶ QuickBooks / Xero / Sage / …
 3. You confirm           GET /sync/batches/{syncBatchId}    ─▶  status + per-item results
 ```
 
@@ -70,8 +71,8 @@ completes. Inbound webhooks are verified with your `whsec_…` webhook secret �
 
 - **Expenses** — see [Sync transactions](/expenses-sync-transactions) for status
   handling and error recovery.
-- **eTIMS** — sales and catalog operations are async and yield a signed KRA receipt.
-  See the [eTIMS overview](/etims-overview).
+- **eTIMS** — a separate product with its own model: a sale is submitted and answered with
+  the signed KRA receipt in one request. See [eTIMS core concepts](/etims-concepts).
 
 ## Next steps
 

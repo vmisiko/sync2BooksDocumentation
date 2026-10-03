@@ -1,0 +1,70 @@
+---
+title: "Idempotency"
+description: "Repeat a sale or credit note request without filing a second invoice: how the Idempotency-Key header works and which calls are safe to retry."
+---
+
+When a request times out you cannot tell whether it reached KRA. If you simply send it again, you risk filing two
+invoices. An **idempotency key** makes the repeat safe: we recognise the request and give you the original result
+instead of filing again.
+
+## The Idempotency-Key header
+
+Send `Idempotency-Key` on `POST /v1/sales` and `POST /v1/credit-notes`.
+
+```bash
+curl -X POST "$S2B_URL/sales" \
+  -H "x-api-key: $S2B_KEY" \
+  -H "Idempotency-Key: order-10042-v1" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+| Rule | |
+|---|---|
+| Length | 8 to 128 characters |
+| Characters | Letters, digits, and `.` `_` `:` `-` |
+| A malformed key | `400`, so you never think you are protected when you are not |
+
+Use a value that is stable for the document: your own order or invoice id works, and so does a UUID that you store
+with the order. Do not generate a new random key for each retry, because that defeats the purpose. A key shorter
+than 8 characters is refused for the same reason.
+
+## What a repeat returns
+
+Sending the same request with the same key again returns **`200`** with the original document, and the header:
+
+```text
+Idempotent-Replayed: true
+```
+
+Nothing is submitted to KRA again, so a replay is safe to send blindly. The header tells you the answer is the
+earlier result rather than a new one. Send the same body when you repeat a request: the original document is
+returned as it was filed, and changes in the new request are not applied.
+
+A document that **failed** is not re-driven by repeating the request. Fix the cause and call
+`POST /v1/sales/{id}/retry`.
+
+## Without a key
+
+If you send no `Idempotency-Key`, your `traderInvoiceNumber` plays the same role: repeating a request with the same
+number returns the existing document.
+
+Using a number that already exists with a **different** key is a `409` with the code `conflict`, and the message
+tells you to use a new number or repeat the original request with its original key.
+
+## What is and is not idempotent
+
+| Call | Repeat-safe? |
+|---|---|
+| `POST /v1/sales`, `POST /v1/credit-notes` | Yes, with the same `Idempotency-Key` |
+| `POST /v1/items` | Yes, by `externalId`: it updates the same item |
+| `POST /v1/items/{id}/register` | Registering a registered item is a no-op unless you pass `force: true` |
+| `POST /v1/stock/adjustments`, `POST /v1/stock/transfers` | Treat each call as a separate movement. See [Stock](/etims-guide-stock). |
+| `POST /v1/purchases/pull` | Safe to repeat: pulling again never changes a review status |
+| `POST /v1/sales/{id}/retry` | Meant for repeating on a document that has not been accepted |
+| `GET` calls | Always |
+
+## Read next
+
+- [Sales](/etims-guide-sales): the outcomes of a sale request
+- [Errors & Troubleshooting](/etims-errors): which failures are safe to retry

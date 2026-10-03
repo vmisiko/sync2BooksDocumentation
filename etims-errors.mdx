@@ -1,61 +1,148 @@
 ---
 title: "Errors & Troubleshooting"
-description: "What a failed catalog sync or sale actually means, how to tell a data problem from a system one, and whether it's safe to retry."
+description: "The error format, every status and error code the eTIMS API returns, how to tell a data problem from a system one, and which failures are safe to retry."
 ---
 
-Catalog syncs and sales carry a human-readable reason when they fail. This page explains how to read that reason and what to do about it.
+Every failed request returns the same JSON shape, whether it was stopped at authentication or in the middle of
+filing with KRA. This page lists what you can get back and what to do about it.
 
-## Where to find the reason
+## Error format
 
-| Where | Field / location |
-|-------|-------------------|
-| Item detail (API) | `GET …/catalog/items` → each item's `lastSyncResultMsg` (and `lastSyncResultCd` when KRA returned one) |
-| Item detail (dashboard) | Item Catalog → open the item → **"Error from KRA / backend"** |
-| Sale detail (API) | `GET …/sales/{saleId}` → the rejection reason on the document |
-| Sale detail (dashboard) | Sales Invoice → open the sale |
+```json
+{
+  "error": {
+    "code": "kra_rejected",
+    "message": "The KRA reason for the rejection.",
+    "sale": { "id": "sale_example_3", "status": "failed" }
+  }
+}
+```
 
-An item or sale that's `FAILED` always has a reason recorded against it — you shouldn't need to guess.
+- **`code`** is stable and machine-readable. Branch on it.
+- **`message`** is for people. Show it, log it, but do not parse it: the wording can change.
+- Some errors carry extra fields beside them, such as `sale`, `item`, `errors`, `creditNoteId` or `branches`. They
+  are listed below.
+
+## Status codes
+
+| Status | `code` | When |
+|---|---|---|
+| `200` | | Success, or a repeat of an earlier request (`Idempotent-Replayed: true`). |
+| `201` | | Created, or a document KRA accepted. |
+| `202` | | A sale or credit note is still in flight. This is not an error: poll it or wait for the callback. |
+| `400` | `invalid_request` | The request is malformed. The message names the first field that is wrong. |
+| `401` | `invalid_api_key` | The key is missing or not valid. |
+| `403` | `forbidden` | The key is valid but may not do this. |
+| `404` | `not_found` | The id does not exist, or belongs to another business. |
+| `409` | `conflict` and others | The request clashes with an existing document or with stock. |
+| `422` | `unprocessable` and others | The request was understood but could not be completed, usually because KRA refused it. |
+| `429` | `rate_limited` | You are over your request budget. See [Rate limits](/etims-rate-limits). |
+| `502` | `upstream_error` | KRA did not answer. |
+| `500` | `internal_error` | Something went wrong on our side. |
+
+A `404` for an id from another business is deliberate: whether an id exists in someone else's account is not
+something you can learn from us. It is never a `403`.
+
+## Specific codes
+
+These codes tell you more than the status alone.
+
+| Status | `code` | Meaning | Extra fields |
+|---|---|---|---|
+| `422` | `validation_failed` | The sale did not pass validation. | `errors`, `sale` |
+| `422` | `item_not_registered` | A sale line uses an item that is not registered with KRA. Register it, then retry the sale. | `sale` (on a sale) |
+| `422` | `item_incomplete` | The item is missing something. See `item.needs`. | `item` |
+| `422` | `registration_failed` | Registering the item did not complete and KRA gave no verdict. Retry. | `item` |
+| `422` | `kra_rejected` | KRA refused the item, sale or credit note. `message` is KRA's reason. | `sale` or `item` |
+| `422` | `not_a_sale` | You tried to credit a credit note. | |
+| `422` | `sale_not_accepted` | You tried to credit a sale KRA has not accepted. | |
+| `409` | `conflict` | The `traderInvoiceNumber` already exists under a different idempotency key. | |
+| `409` | `insufficient_stock` | A stock-tracked item has too little stock. | `sale` (on a sale) |
+| `409` | `already_credited` | The sale already has a credit note. | `creditNoteId` |
+| `409` | `credit_note_in_progress` | A credit note for the sale is still waiting for KRA. | `creditNoteId` |
+| `502` | `upstream_error` | KRA returned nothing for a purchases pull. | `branches` |
+
+Examples:
+
+```json
+{ "error": { "code": "invalid_api_key", "message": "Invalid API key" } }
+```
+
+```json
+{ "error": { "code": "forbidden", "message": "This API key is missing the sales:write scope" } }
+```
+
+```json
+{
+  "error": {
+    "code": "already_credited",
+    "message": "This sale has already been credited by credit note CN-2026-0001. A credit note reverses a sale in full, so it can only be issued once.",
+    "creditNoteId": "sale_example_2"
+  }
+}
+```
+
+## Validation messages
+
+A `400` reports the **first** problem it finds, and names the field, so you fix one thing at a time:
+
+- `traderInvoiceNumber is required`
+- `lines[0].quantity must be greater than 0`
+- `saleDate must be a date as YYYY-MM-DD`
+
+Numbers must be JSON numbers. A numeric string such as `"3500"` is refused, because money is never guessed.
+Dates are `YYYY-MM-DD` and must be real calendar dates.
 
 ## Two kinds of failure
 
-Every failure reason falls into one of two categories, and telling them apart is the first troubleshooting step:
-
 <CardGroup cols={2}>
-  <Card title="KRA / backend rejected it" icon="ban">
-    The request reached KRA (or was validated before reaching it) and was refused because of something in **your data** — a code that isn't on KRA's accepted list, a missing classification, insufficient stock. **Fix the data, then retry.**
+  <Card title="KRA or validation refused it" icon="ban">
+    The request was understood and refused because of something in **your data**: a code that is not on KRA's
+    list, a missing classification, too little stock. Status `400`, `409` or `422`. **Fix the data, then retry.**
   </Card>
   <Card title="It never went through" icon="wifi-off">
-    A network or system issue on the way to KRA — a timeout, a gateway error, a dropped connection. Nothing about your request was wrong. **Just retry** — Sync2Books tracks the sequencing internally, so retrying never creates duplicates.
+    A network or system problem on the way to KRA: a timeout, a `502`, a `500`. Nothing about your request was
+    wrong. **Retry** with the same `Idempotency-Key`, which is safe.
   </Card>
 </CardGroup>
 
-**How to tell which one you're looking at:** a rejection describes a specific problem with a specific value — often naming the field and, for code-list fields, the exact accepted values. A system-level failure reads like an infrastructure error (timeout, gateway, connection) and, where Sync2Books can identify it as such, is prefixed `retryable:`.
+| Failure | Safe to retry as is? |
+|---|---|
+| Timeout or dropped connection | Yes, with the same `Idempotency-Key`. |
+| `502`, `500` | Yes, after a short wait. |
+| `429` | Yes, after `Retry-After` seconds. |
+| `202` | Do not resend. Poll the sale. |
+| `400`, `403`, `404`, `409`, `422` | No, not until the cause is fixed. It will fail the same way. |
 
-<Tip>
-A `retryable:`-prefixed message is a promise, not just a hint: Sync2Books' internal sequence numbers (`itemCd`, `invcNo`, and similar) are held in place for these failures specifically so a retry is always safe. You will never be told to fix your data for one of these — just try again.
-</Tip>
+Retrying a data problem without fixing the value just fails again with the same reason.
 
-## Common failure reasons
+## Common KRA rejection reasons
 
-| Reason | Category | What it means | Fix |
-|--------|----------|----------------|-----|
-| `Missing classification mapping for item...` | Data | No `classificationCode` was supplied and none is pre-configured for your account | Supply a valid `classificationCode` → [Codes & Values](/etims-codes) |
-| `Item has not been synced to eTIMS (missing etimsItemCode)` | Data | You tried to sell (or reference) an item that's only `PENDING`, not `REGISTERED` | Register the item with KRA first |
-| `Insufficient stock: Have X, tried to deduct Y` | Data | Selling a `GOODS` item deducts stock; there isn't enough on hand | Add stock before selling |
-| `...can only be among the following list: [...]` | Data | A code you supplied (packaging unit, quantity unit, tax type, etc.) isn't one KRA recognizes — the message lists every value KRA will accept for that field | Pick one of the listed values → [Codes & Values](/etims-codes) |
-| Any message prefixed `retryable:` | System | The request didn't complete — a timeout, connection issue, or gateway error between Sync2Books and KRA | Retry — no data changes needed |
+When the code is `kra_rejected`, the `message` holds KRA's own reason. These come up often:
 
-This table grows as new failure reasons are confirmed. If you hit one that isn't listed here and can't tell which category it falls into from the message alone, [contact support](mailto:support@sync2books.com) with the exact reason text.
+| Reason | What it means | Fix |
+|---|---|---|
+| A missing classification | The item has no `classificationCode`. | Add a valid code. See [Item Classification Codes](/etims-item-classification-codes). |
+| `...can only be among the following list: [...]` | A code you sent, such as a packaging or quantity unit, is not one KRA accepts. The message lists the values it will accept. | Pick one of the listed values. See [Codes & Values](/etims-codes). |
+| Insufficient stock | A stock-tracked item does not have enough on hand. | Add stock. See [Stock](/etims-guide-stock). |
 
-## Retrying
+If you meet a reason that is not listed and cannot tell which kind it is, [contact support](mailto:support@sync2books.com)
+with the exact reason text.
 
-- **Catalog items**: `POST …/catalog/items/sync` with `force: true`, or `onlyPending: true` to only retry items that aren't yet `REGISTERED` (the default).
-- **Sales**: resubmit the same sale — Sync2Books' internal idempotency means a retried sale is never double-submitted to KRA.
+## Troubleshooting checklist
 
-Retrying a *data* rejection without fixing the underlying value will simply fail again with the same reason.
+1. Call `GET /v1/me`. If it fails, the problem is the key. See [Authentication & API keys](/etims-authentication).
+2. Read `error.code`, then `error.message`. The message names the field or the KRA reason.
+3. For a `422` on a sale, read `error.sale.error` and `error.sale.status`: the sale still exists.
+4. For a missing scope, check the key's permissions on the Integrations page.
+5. For a `403` about environments, check that a test key is acting on a sandbox business, or a live key on a
+   production one.
+
+When you contact [support@sync2books.com](mailto:support@sync2books.com), send the sale or item `id`, the time of
+the request and the error body. Never send the key itself.
 
 ## Read next
 
-- [eTIMS Overview](/etims-overview) — how the integration is shaped and how to get access
-- [Codes & Values](/etims-codes) — the code lists behind most data rejections
-- [Codes & Values](/etims-codes) — the KRA code values a rejected field is validated against
+- [Idempotency](/etims-idempotency): repeating requests safely
+- [Rate limits](/etims-rate-limits): handling a `429`
+- [Codes & Values](/etims-codes): the code lists behind most data rejections

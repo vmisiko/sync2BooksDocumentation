@@ -1,0 +1,111 @@
+---
+title: "Sales"
+description: "Issue a sale, read the KRA outcome, retry one that did not go through, list sales and download the signed receipt as a PDF."
+---
+
+A sale is one request: you send the lines, we validate them, submit the sale to KRA and answer with the signed
+receipt. This guide covers the request, the possible outcomes, and what to do after.
+
+## Issue a sale
+
+`POST /v1/sales` needs the `sales:write` scope. Send an [`Idempotency-Key`](/etims-idempotency) so a retried
+request cannot file a second invoice.
+
+```bash
+curl -X POST "$S2B_URL/sales" \
+  -H "x-api-key: $S2B_KEY" \
+  -H "Idempotency-Key: order-10042-v1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "traderInvoiceNumber": "INV-2026-0001",
+    "saleDate": "2026-10-02",
+    "lines": [
+      { "itemId": "{id}", "quantity": 2, "unitPrice": 3500, "description": "500ml Cooking Oil" }
+    ],
+    "customer": { "name": "Example Customer Ltd", "pin": "P000000000X", "email": "accounts@example.com" },
+    "paymentTypeCode": "01",
+    "callbackUrl": "https://example.com/hooks/sync2books"
+  }'
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `traderInvoiceNumber` | Yes | Your own number, up to 50 characters. Unique per business. |
+| `saleDate` | Yes | `YYYY-MM-DD`, a real calendar date. |
+| `lines` | Yes | 1 to 200 lines. |
+| `lines[].itemId` | Yes | A **registered** item of this business. |
+| `lines[].quantity` | Yes | A number greater than 0. |
+| `lines[].unitPrice` | Yes | A number, 0 or more. The price the customer pays per unit, **tax included**. |
+| `lines[].description` | No | Up to 200 characters. |
+| `customer` | No | An object with `name` (up to 200), `pin` (up to 11), `phone` (up to 30) and `email` (up to 200), all optional. |
+| `paymentTypeCode` | No | Up to 2 characters. Defaults to `01` (cash). See [Codes & Values](/etims-codes#payment-type-sales). |
+| `branchId` | No | Defaults to the business's first branch. |
+| `callbackUrl` | No | Where to send the result. See [Result callbacks](/etims-callbacks). |
+
+The tax on each line comes from the item. See [Core concepts](/etims-concepts#tax-inclusive-pricing).
+
+## Outcomes
+
+| HTTP status | Meaning | What to do |
+|---|---|---|
+| `201` | KRA accepted the sale. `data.sale.receipt` is filled in. | Store the sale `id` and the receipt. |
+| `200` | A repeat of an earlier request. The original sale is returned, with `Idempotent-Replayed: true`. | Nothing: nothing was filed again. |
+| `202` | The sale is still in flight. | Poll `GET /v1/sales/{id}` or wait for the callback. |
+| `422` | The sale was not accepted. `error.code` says why. | See below. |
+| `409` | A conflict: `conflict` or `insufficient_stock`. | See below. |
+
+A `422` carries one of these codes, and each includes the `sale` so you can see what was stored:
+
+| `error.code` | Cause | Fix |
+|---|---|---|
+| `validation_failed` | The sale did not pass validation. `errors` lists the problems. | Correct the data, then `POST /v1/sales/{id}/retry`. |
+| `item_not_registered` | A line uses an item KRA does not know yet. | Register the item, then retry the sale. |
+| `kra_rejected` | KRA refused the sale. `message` carries its reason. | Fix the cause, then retry. |
+
+A `409` with `conflict` means the `traderInvoiceNumber` already exists under a different idempotency key. A `409`
+with `insufficient_stock` means a stock-tracked item has too little stock: add stock and retry. See
+[Stock](/etims-guide-stock).
+
+A request that is malformed is a `400` before anything is stored. It names the first field that is wrong, for
+example `lines[0].quantity must be greater than 0`.
+
+## Retry a sale
+
+A sale that failed, or never reached KRA, still exists. Re-submit it with `POST /v1/sales/{id}/retry`, which needs
+`sales:write` and takes no body. It returns `200` with the sale, or a `422 kra_rejected` if KRA refuses it again.
+The same call works on credit notes.
+
+```bash
+curl -X POST "$S2B_URL/sales/{saleId}/retry" -H "x-api-key: $S2B_KEY"
+```
+
+## Read a sale
+
+`GET /v1/sales/{id}` returns the sale, with its lines, totals, receipt and the state of its
+[callback](/etims-callbacks). It needs `sales:read`.
+
+`GET /v1/sales` lists sales and credit notes, newest first, a page at a time. Filter by date with `startDate` and
+`endDate`. See [Pagination](/etims-pagination).
+
+## Download the receipt
+
+`GET /v1/sales/{id}/receipt` returns the KRA receipt as a PDF, with the verification QR code. It needs
+`sales:read`.
+
+```bash
+curl "$S2B_URL/sales/{saleId}/receipt" -H "x-api-key: $S2B_KEY" -o receipt.pdf
+curl "$S2B_URL/sales/{saleId}/receipt?copy=true" -H "x-api-key: $S2B_KEY" -o receipt-copy.pdf
+```
+
+`copy=true` gives a customer copy marked COPY, for reprints. A receipt exists only once KRA has accepted the
+sale. Before that, the call is a `404` with the message `No receipt yet: KRA has not accepted this sale.`
+
+The same details are in the `receipt` object on the sale: `cuInvoiceNo`, `signature`, `internalData` and a
+`verificationUrl` that opens the receipt on KRA's side. For how the receipt is laid out, see
+[Technology Architecture](/etims-architecture).
+
+## Read next
+
+- [Credit notes](/etims-guide-credit-notes): reverse an accepted sale
+- [Result callbacks](/etims-callbacks): be told the outcome instead of polling
+- [Errors & Troubleshooting](/etims-errors): every error code

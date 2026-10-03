@@ -1,0 +1,101 @@
+---
+title: "Core concepts"
+description: "The ideas behind the eTIMS API: businesses and branches, items and registration, tax-inclusive pricing, and how a sale moves from request to KRA-signed receipt."
+---
+
+A short tour of the ideas the rest of the eTIMS docs assume. Read it once and the guides and the endpoint reference
+will make sense.
+
+## Businesses and branches
+
+A **business** is a taxpayer registered in the compliance dashboard, with its KRA PIN. A business has one or more
+**branches**, each with the branch id KRA knows it by (`kraBhfId`). Branches are created in the dashboard. The API
+only reads them, with `GET /v1/businesses/{businessId}/branches`.
+
+Endpoints that act on a branch take an optional `branchId`. Leave it out and the business's default branch, its
+first branch, is used. To name one, pass either our branch `id` or its `kraBhfId`.
+
+## Environments
+
+Every business is either a **sandbox** business, which talks to the KRA sandbox, or a **production** business,
+which files real tax documents. Every key is either a **test** key or a **live** key, and a key only works with
+businesses of its own kind. Both kinds use the same base URL. See [Test and live](/etims-authentication#test-and-live).
+
+## Items and registration
+
+An **item** is something you sell. KRA must know about an item before it can appear on a sale, so an item goes
+through two steps: you create it, then you **register** it with KRA.
+
+| `registrationStatus` | Meaning |
+|---|---|
+| `PENDING` | The item exists but KRA does not know it yet. This is the state straight after creation. |
+| `REGISTERED` | KRA accepted it. It can now be sold. |
+| `FAILED` | KRA rejected the registration. |
+
+If an item cannot be registered yet, `needs` says why: `needs.productType` is `true` when `productTypeCode` is
+missing, and `needs.classificationMapping` is `true` when `classificationCode` is missing.
+
+`productTypeCode` is one of `"1"` raw material, `"2"` finished product and `"3"` service. Items of types `1` and
+`2` are goods and are **stock-tracked**: selling one deducts stock. Services are not. The response tells you in
+`stockTracked`.
+
+Creating an item with an `externalId` you already used updates that item instead of making a duplicate. See
+[Items](/etims-guide-items) and [Item Attributes](/etims-item-attributes).
+
+## Tax types
+
+The tax on a sale comes from the **item**, never from the sale request. You choose it once, with `taxCategory`,
+when you create the item.
+
+| `taxCategory` | KRA tax type | Rate |
+|---|---|---|
+| `VAT_STANDARD` | B | 16% |
+| `VAT_ZERO` | C | 0% |
+| `EXEMPT` | A | Exempt |
+| `OTHER` | D | Non-VAT |
+| `VAT_8` | E | 8% |
+
+## Tax-inclusive pricing
+
+The `unitPrice` on a sale line is what the customer pays, **tax included**. We work the VAT out of it, per line,
+using the item's tax type. You do not send a tax amount.
+
+For example, one 16% item sold at 1,160.00 is shown as 1,000.00 taxable plus 160.00 VAT. The split appears on each
+line as `taxableAmount` and `taxAmount`, and in `totals`.
+
+All amounts are in Kenya shillings (KES). There is no multi-currency support.
+
+## The sale lifecycle
+
+You issue a sale with one request, and KRA's answer comes back on it. The sale's `status` tells you where it is:
+
+| `status` | Meaning | HTTP status of the issuing call |
+|---|---|---|
+| `completed` | KRA accepted it. `receipt` is filled in. | `201` |
+| `pending`, `ready_to_submit`, `retrying` | Still working towards a result. | `202` |
+| `failed` | KRA rejected it, or it could not be submitted. `error` says why. | `422` |
+| `cancelled` | The document was cancelled. | |
+
+`receipt` is `null` until KRA accepts the document, because there is nothing valid to print before then. For a
+sale that is still in flight, poll `GET /v1/sales/{id}`, or pass a `callbackUrl` and let us tell you. See
+[Result callbacks](/etims-callbacks).
+
+A failed sale is not lost. Fix the cause, for example register a missing item, and re-submit it with
+`POST /v1/sales/{id}/retry`.
+
+## Credit notes
+
+A **credit note** reverses an accepted sale **in full**, once. It copies the buyer and lines from the sale, so you
+send only the sale id, your own number for it, and a return date. Its amounts are negative, and its receipt carries
+the CU invoice number of the sale it reverses. See [Credit notes](/etims-guide-credit-notes).
+
+## Your invoice number
+
+Every sale and credit note carries a `traderInvoiceNumber`, your own number for the document. It must be unique per
+business. Reusing one under a different idempotency key is a `409`. See [Idempotency](/etims-idempotency).
+
+## Read next
+
+- [Quickstart](/etims-quickstart): put these ideas to work
+- [Items](/etims-guide-items): create and register items
+- [Sales](/etims-guide-sales): issue sales and read receipts

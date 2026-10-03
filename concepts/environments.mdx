@@ -16,7 +16,6 @@ Endpoints sit directly under it, for example:
 - `POST /companies`
 - `POST /expenses/{connectionId}`
 - `GET  /sync/batches/{syncBatchId}`
-- `POST /companies/{companyId}/integrations/etims/sales`
 
 <Warning>
 Older examples that used `https://api.sync2books.com/v1/...` are **incorrect** —
@@ -30,20 +29,18 @@ encoded in the key prefix, so you can tell them apart at a glance:
 
 | Environment | API key prefix | Use for |
 |-------------|----------------|---------|
-| **Development** | `sk_development_…` | Building and testing. eTIMS calls hit the KRA **sandbox**. |
-| **Production** | `sk_production_…` | Live traffic. eTIMS calls hit live KRA. |
+| **Development** | `sk_development_…` | Building and testing. |
+| **Production** | `sk_production_…` | Live traffic. |
 
 Switch environments simply by swapping the API key (and client secret, if you sign
 requests). Nothing else in the request changes.
 
 <Note>
-For eTIMS specifically, the **connection** also carries an environment
-(`SANDBOX` / `PRODUCTION`) chosen when the company is provisioned. Use a
-development API key against a sandbox-provisioned company while testing.
+This page covers the Accounting API. The eTIMS API has its own keys and environments: a test key reaches the KRA sandbox and a live key reaches production, from one base URL. See [Authentication & API keys](/etims-authentication#test-and-live).
 </Note>
 
 ## Interactive API explorer
 
-Try endpoints directly from these docs, with your own API key, under the **Accounting API** and **Compliance API** tabs — see [Which API do I need?](/which-api) if you're unsure which one to open.
+Try endpoints directly from these docs, with your own API key, under the **Accounting API** and **eTIMS API** tabs — see [Which API do I need?](/which-api) if you're unsure which one to open.
 
 The raw, always-current OpenAPI schema behind both is also published with the running API at `https://api.sync2books.com/api-json`.

@@ -1,0 +1,128 @@
+---
+title: "Authentication & API keys"
+description: "Create an eTIMS API key, send it with every request, and understand scopes, business-bound keys and the difference between test and live keys."
+---
+
+import { baseUrl } from "/snippets/etims-base-url.mdx";
+
+Every request to the Compliance API carries an **API key**. There is no token exchange and no request signature:
+the key is the whole credential. Keys belong to the Compliance API and are different from the Accounting API's
+`sk_` keys.
+
+Requests go to <code>{baseUrl}</code>.
+
+## How to authenticate
+
+Send the key in the `x-api-key` header, or as a bearer token. Both forms are equivalent.
+
+<CodeGroup>
+```bash x-api-key header
+curl "$S2B_URL/me" -H "x-api-key: cmp_sk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+```bash Bearer token
+curl "$S2B_URL/me" -H "Authorization: Bearer cmp_sk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+```
+</CodeGroup>
+
+A bearer value that is not one of these keys is treated as no key at all.
+
+## Key format
+
+A key is `cmp_sk_test_` or `cmp_sk_live_` followed by 32 hexadecimal characters. The prefix tells you the mode at a
+glance, in a log or a support ticket. The mode itself is a setting stored with the key, not something read from the
+text.
+
+| Prefix | Mode | Acts on |
+|--------|------|---------|
+| `cmp_sk_test_` | Test | Sandbox businesses, against the KRA sandbox |
+| `cmp_sk_live_` | Live | Production businesses, filing real tax documents |
+
+## Getting a key
+
+Keys are created in the compliance dashboard, by an administrator.
+
+1. Select the business and open **Integrations**. Only administrators can manage API keys.
+2. Choose **Create API key**. The first key you create also sets up your application for you.
+3. Fill in the dialog: an optional **Name**, the **Mode** (**Test** for sandbox businesses, **Live** for real invoices
+   filed with KRA), the **Business**, the **Permissions** (scopes) and an optional expiry date. A key with no
+   expiry stays valid until you revoke it.
+4. Copy the key. **It is shown once.** We store only a fingerprint of it, so we cannot show it to you again.
+
+If a key is lost, rotate it from the same page, which issues a new one. You can also revoke a key there. The
+Integrations page also shows the API base URL, with a button to copy it.
+
+## Business-bound and organisation-wide keys
+
+| | **Business-bound key** (default) | **Organisation-wide key** |
+|---|---|---|
+| Created from | The business's **Integrations** page | **Businesses**, then **Developers** |
+| Acts for | One business | Every business in your organisation, in the key's mode |
+| `businessId` on requests | Not needed | Required on every request that acts for a business |
+| Naming another business | `403`, whether or not that business exists | `403` for a business outside your organisation, `404` for an unknown id |
+
+A business-bound key is what most integrations need: it cannot reach any other business, whatever it is sent.
+
+An organisation-wide key must say which business each request is for. Send `businessId` in the path, the query
+string or the JSON body. If you leave it out you get a `400` saying `businessId is required`. List the ids you can
+use with `GET /v1/businesses`.
+
+## Scopes
+
+A scope is a permission on a key. Grant each key only what its integration needs. A key created without choosing
+scopes gets all of them, shown in the dashboard as **Full access**.
+
+| Scope | Lets the key |
+|-------|--------------|
+| `catalog:read` | Read items: `GET /v1/items`, `GET /v1/items/{id}` |
+| `catalog:write` | Create and register items: `POST /v1/items`, `POST /v1/items/{id}/register` |
+| `sales:read` | Read sales, credit notes and receipts: `GET /v1/sales`, `GET /v1/sales/{id}`, `GET /v1/sales/{id}/receipt` |
+| `sales:write` | Issue and retry them: `POST /v1/sales`, `POST /v1/credit-notes`, `POST /v1/sales/{id}/retry`, `POST /v1/sales/{id}/callback/resend` |
+| `stock:write` | Record stock movements: `POST /v1/stock/adjustments`, `POST /v1/stock/transfers` |
+| `purchases:read` | Fetch and read supplier invoices: `POST /v1/purchases/pull`, `GET /v1/purchases`, `GET /v1/purchases/{id}` |
+| `lookups:read` | Read businesses, branches and KRA code lists: `GET /v1/businesses`, `GET /v1/businesses/{id}`, `GET /v1/businesses/{id}/branches`, `GET /v1/lookups/*` |
+
+`GET /v1/me` needs no scope, so a key with the wrong scopes can still find out what it has.
+
+A request that needs a scope the key lacks is a `403` that names it, for example
+`This API key is missing the sales:write scope`.
+
+## Test and live
+
+A **test** key can only act on **sandbox** businesses, and a **live** key only on **production** ones. Both use the
+same base URL, so there is no separate sandbox address. What changes is the key and the business it acts on.
+
+Mixing them is refused with a `403` that says which side is which, for example *This is a test API key and Example
+Trading Ltd is a production business. Use the key for that environment.* This is a safeguard: a test integration
+cannot file real tax data with KRA by accident.
+
+A business also needs its eTIMS connection set up in the dashboard before a key can act for it. Without one, the
+call is a `403` that tells you to finish setup.
+
+## Key hygiene
+
+<Warning>
+  A leaked live key can file tax documents in your customer's name. Treat keys like passwords.
+</Warning>
+
+- Keep keys on your server. Never put one in a browser, a mobile app or a repository.
+- Use one key per integration, so you can revoke one without breaking the others.
+- Grant the fewest scopes that work, and set an expiry date.
+- Rotate a key when someone who knew it leaves.
+- Never log a key. If you need to identify one in a support ticket, send its prefix and the id of the failing sale,
+  not the key.
+
+## Authentication errors
+
+Every authentication failure is a `401` with the code `invalid_api_key` and the message `Invalid API key`. That
+covers a missing key, a wrong one, a revoked or expired one, and a suspended application. We deliberately do not say
+which, because the answer would help someone holding a leaked string. If you can see the key listed in the
+dashboard, check its status and expiry there.
+
+A `403` means the key is valid but may not do this. The message says why. See [Errors & Troubleshooting](/etims-errors).
+
+## Read next
+
+- [Quickstart](/etims-quickstart): use your key to issue a first receipt
+- [Rate limits](/etims-rate-limits): the request budget behind your key
+- [Core concepts](/etims-concepts): businesses, branches and environments

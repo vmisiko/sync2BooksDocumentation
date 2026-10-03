@@ -1,0 +1,93 @@
+---
+title: "Credit notes"
+description: "Reverse an accepted sale in full with a credit note, and understand the rules about reasons, repeats and what a credit note copies from the sale."
+---
+
+A **credit note** cancels a sale that KRA has already accepted. This API issues **full reversals only**: a credit
+note reverses the whole sale, and a sale can be credited once. Partial credit notes are not supported.
+
+## Issue a credit note
+
+`POST /v1/credit-notes` needs the `sales:write` scope. Send an [`Idempotency-Key`](/etims-idempotency).
+
+```bash
+curl -X POST "$S2B_URL/credit-notes" \
+  -H "x-api-key: $S2B_KEY" \
+  -H "Idempotency-Key: refund-order-10042" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "traderInvoiceNumber": "CN-2026-0001",
+    "returnDate": "2026-10-03",
+    "saleId": "{saleId}",
+    "reason": "06"
+  }'
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `traderInvoiceNumber` | Yes | Your own number for the credit note, up to 50 characters. |
+| `returnDate` | Yes | `YYYY-MM-DD`, a real calendar date. |
+| `saleId` | Yes | The `id` of an accepted sale. |
+| `reason` | No | One of `01` to `06`. Defaults to `06`. |
+| `callbackUrl` | No | Where to send the result. See [Result callbacks](/etims-callbacks). |
+
+The buyer and the lines are copied from the original sale, so you do not send them.
+
+### Reasons
+
+| Code | Reason |
+|---|---|
+| `01` | Missing quantity |
+| `02` | Missing data |
+| `03` | Damaged |
+| `04` | Wasted |
+| `05` | Raw material shortage |
+| `06` | Refund |
+
+## The response
+
+The response has the same shape as a sale, under `data.sale`. It has `type: "credit_note"`, an `originalSaleId`, and
+negative amounts. Its `receipt.originalCuInvoiceNo` is the CU invoice number of the sale it reverses.
+
+```json
+{
+  "data": {
+    "sale": {
+      "id": "sale_example_2",
+      "type": "credit_note",
+      "status": "completed",
+      "traderInvoiceNumber": "CN-2026-0001",
+      "originalSaleId": "sale_example_1",
+      "totals": { "total": -7000, "taxableAmount": -6034.48, "taxAmount": -965.52 },
+      "receipt": {
+        "cuInvoiceNo": "KRACU0000000000/13 NC",
+        "originalCuInvoiceNo": "KRACU0000000000/12 NS"
+      }
+    }
+  }
+}
+```
+
+The status codes work as they do for a sale: `201` accepted, `202` still in flight, `422` rejected, and `200` with
+`Idempotent-Replayed: true` for a repeat of the same request. You can download its receipt with
+`GET /v1/sales/{id}/receipt`, like any other sale.
+
+## Rules and errors
+
+| Situation | Response |
+|---|---|
+| The sale id does not exist, or belongs to another business | `404` |
+| The id is a credit note, not a sale | `422` `not_a_sale` |
+| KRA has not accepted the sale yet | `422` `sale_not_accepted` |
+| The sale was already credited | `409` `already_credited`, with the `creditNoteId` |
+| A credit note for this sale is still waiting for KRA | `409` `credit_note_in_progress`, with the `creditNoteId` |
+| KRA refused the credit note | `422` `kra_rejected`, with the `sale` |
+
+If you get `credit_note_in_progress`, wait for the first one, or re-drive it with `POST /v1/sales/{id}/retry` using
+the `creditNoteId`, instead of issuing another.
+
+## Read next
+
+- [Sales](/etims-guide-sales): the sale you are reversing
+- [Idempotency](/etims-idempotency): repeating a request safely
+- [Codes & Values](/etims-codes#credit-note-reasons): the reason codes

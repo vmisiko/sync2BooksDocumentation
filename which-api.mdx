@@ -1,16 +1,16 @@
 ---
 title: "Which API do I need?"
-description: "Sync2Books is two separate products behind one dashboard: the Accounting API and the Compliance API. Here's how to tell which one (or both) you need."
+description: "Sync2Books is two separate products: the Accounting API and the Compliance API (eTIMS). Here's how to tell which one (or both) you need."
 ---
 
-Sync2Books is **two separate products** that happen to share a dashboard, an API key, and a base URL. They solve different problems, have different data models, and — as of today — are documented and referenced separately. Most of the confusion in these docs in the past came from mixing the two together, so start here.
+Sync2Books is **two separate products**. They solve different problems, have different data models, and each has its own dashboard, its own API keys, its own base URL and its own docs. Most of the confusion in these docs in the past came from mixing the two together, so start here.
 
 <CardGroup cols={2}>
   <Card title="Accounting API" icon="receipt" href="/expenses-overview">
     **Write bookkeeping data into an accounting system.** Expenses, bills, invoices, and payments — synced to QuickBooks Online, Xero, Sage, Dynamics 365 Business Central, or Odoo.
   </Card>
-  <Card title="Compliance API — eTIMS (Kenya)" icon="file-invoice" href="/etims-overview">
-    **Make an invoice legally tax-compliant in Kenya.** Register items, manage stock, and get a KRA-signed receipt through eTIMS (OSCU).
+  <Card title="eTIMS API (Compliance)" icon="file-invoice" href="/etims-overview">
+    **Make an invoice legally tax-compliant in Kenya.** Register items, issue sales and credit notes, and get a KRA-signed receipt through eTIMS. Has its own API keys and its own docs tab.
   </Card>
 </CardGroup>
 
@@ -20,21 +20,20 @@ Sync2Books is **two separate products** that happen to share a dashboard, an API
 |---|---|---|
 | **Answers the question** | "How do I get this expense/bill/invoice into my customer's books?" | "How do I make this sale legal under Kenyan tax law?" |
 | **The external system** | An accounting package your customer already uses (QuickBooks, Xero, Sage, Dynamics, Odoo) | The Kenya Revenue Authority's eTIMS network (via an OSCU device) |
-| **How you connect a company** | OAuth, via the [Link component](/link-integration) or an `authUrl` | KRA PIN + device serial, in the **compliance dashboard** (see [eTIMS Overview](/etims-overview)) |
-| **Core objects** | Expense, Bill, Invoice, Bill Payment | Catalog item, Sale, Credit note, Branch |
+| **How you connect a company** | OAuth, via the [Link component](/link-integration) or an `authUrl` | KRA PIN and device details entered in the **compliance dashboard**, then an API key from its **Integrations** page |
+| **Authentication** | `X-API-Key` header, with a `sk_...` key. See [Authentication](/concepts/authentication). | `x-api-key` header or a bearer token, with a `cmp_sk_...` key. See [Authentication & API keys](/etims-authentication). |
+| **Core objects** | Expense, Bill, Invoice, Bill Payment | Item, Sale, Credit note, Branch |
 | **Geography** | Anywhere | Kenya only |
-| **Reference docs** | [Accounting API](/api-reference) | [Compliance API](/etims-overview) |
+| **Reference docs** | [Accounting API](/api-reference) | [eTIMS API](/etims-api-reference) |
 
-## What's shared
-
-Both products sit behind the same [authentication](/concepts/authentication) (your `X-API-Key`), the same [sync model](/concepts/sync-model) (queue a write, get a `syncBatchId`, confirm the result), and the same [company](/concepts/companies-and-connections) as the unit you scope requests to. Learn those three concepts once — you won't need to relearn them when you move from one product to the other.
+The two use different base URLs, so keep each product's calls pointed at its own. The Accounting API's is in [Environments & base URLs](/concepts/environments), and the eTIMS API's is in the [eTIMS API reference](/etims-api-reference).
 
 ## Using both together
 
-A single company can be connected to **both** an accounting system and eTIMS at once — that's the common case for a Kenyan business: you write an invoice through the Accounting API, and the same invoice is (optionally) submitted to eTIMS for a KRA-signed receipt. The two flows are independent — an eTIMS sale doesn't require an accounting connection, and an accounting invoice doesn't require eTIMS — but an invoice can carry a reference to the matching eTIMS receipt once both have run.
+A Kenyan business often needs both: you write an invoice through the Accounting API, and the sale is issued through the eTIMS API for a KRA-signed receipt. The two flows are independent — an eTIMS sale doesn't require an accounting connection, and an accounting invoice doesn't require eTIMS. Where both are in use, the receipt can be attached to the matching invoice in the connected accounting system.
 
 ## Still not sure?
 
 - Building expense reports, bill pay, or invoicing for a business **outside Kenya**, or that doesn't need KRA compliance yet? → **Accounting API**.
-- Your customer is Kenyan and legally required to issue eTIMS-compliant receipts? → **Compliance API**. You may still want the Accounting API alongside it if they also want their books synced.
+- Your customer is Kenyan and legally required to issue eTIMS-compliant receipts? → **eTIMS API**. You may still want the Accounting API alongside it if they also want their books synced.
 - Not sure at all? [Email us](mailto:support@sync2books.com) — we'll point you at the right one.

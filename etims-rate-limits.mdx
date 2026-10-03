@@ -1,0 +1,69 @@
+---
+title: "Rate limits"
+description: "How many eTIMS API requests you can make per minute, what the rate-limit headers mean, and how to back off when you hit the limit."
+---
+
+The Compliance API limits how many requests an application can make each minute. The limit is there so one
+integration cannot starve the others, and it is generous for normal invoicing.
+
+## The limit
+
+The default is **120 requests per minute per application**.
+
+The limit belongs to the **application**, not to a single key. All keys of one application share one budget, so
+rotating a key does not reset it. Your own value is `rateLimitPerMin` in the response to `GET /v1/me`.
+
+Need more? A higher limit can be requested from support at
+[support@sync2books.com](mailto:support@sync2books.com). Tell us the application, the business and the traffic you
+expect.
+
+## Headers
+
+Every response to a request that passed authentication carries:
+
+| Header | Meaning |
+|---|---|
+| `X-RateLimit-Limit` | The requests allowed per minute. |
+| `X-RateLimit-Remaining` | The requests left in the current window. |
+| `X-RateLimit-Reset` | **Seconds until the window resets.** |
+
+<Warning>
+  `X-RateLimit-Reset` is a number of **seconds from now**, not a Unix timestamp. Do not subtract it from the
+  current time.
+</Warning>
+
+Every request that passes authentication counts, including ones that fail later with a `403` or `404`. A request
+rejected for a bad key or a missing scope is not counted and carries no rate-limit headers.
+
+## When you go over
+
+The call is refused with `429`, the code `rate_limited`, and one more header:
+
+| Header | Meaning |
+|---|---|
+| `Retry-After` | Seconds to wait before you try again. |
+
+```json
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "Rate limit of 120 requests per minute exceeded. Retry in 23s."
+  }
+}
+```
+
+## Staying under the limit
+
+- On a `429`, wait the number of seconds in `Retry-After`, then add a small random delay so that many workers do
+  not all return at the same instant.
+- Watch `X-RateLimit-Remaining` and slow down before it reaches 0.
+- Spread bulk work, such as a catalogue import, over time instead of sending it all at once.
+- Use [callbacks](/etims-callbacks) instead of polling `GET /v1/sales/{id}`.
+- Reuse what you have: items and lookups change rarely, so cache them.
+
+A request that is retried after a `429` is safe to resend with the same `Idempotency-Key`.
+
+## Read next
+
+- [Errors & Troubleshooting](/etims-errors): every error code
+- [Result callbacks](/etims-callbacks): avoid polling
