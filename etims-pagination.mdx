@@ -1,0 +1,67 @@
+---
+title: "Pagination"
+description: "Page through sales and supplier invoices with cursors, and know which eTIMS list endpoints are not paginated."
+---
+
+Two list endpoints return their results a page at a time: `GET /v1/sales` and `GET /v1/purchases`. Both use
+**cursor** pagination, newest first.
+
+## Parameters
+
+| Parameter | Meaning |
+|---|---|
+| `pageSize` | How many items per page, **1 to 100**. Defaults to 20. A value outside that range is a `400`, not clamped. |
+| `cursor` | The `nextCursor` from the previous page, passed back unchanged. Leave it out for the first page. |
+| `startDate`, `endDate` | Only documents dated on or after, or on or before, this day. `YYYY-MM-DD`. |
+| `status` | Purchases only: `pulled`, `pending_review`, `confirmed` or `rejected`. |
+
+## The response
+
+```json
+{
+  "data": { "sales": [ ... ] },
+  "pagination": { "nextCursor": "sale_example_20", "pageSize": 20 }
+}
+```
+
+`pagination.nextCursor` is `null` on the last page. Treat the cursor as an opaque string and send it back exactly
+as you got it.
+
+```bash
+curl "$S2B_URL/sales?pageSize=50&startDate=2026-10-01" -H "x-api-key: $S2B_KEY"
+curl "$S2B_URL/sales?pageSize=50&startDate=2026-10-01&cursor={nextCursor}" -H "x-api-key: $S2B_KEY"
+```
+
+A cursor that belongs to another business is a `404`.
+
+## Walk every page
+
+```javascript Node.js
+let cursor = null;
+const sales = [];
+
+do {
+  const url = new URL(`${process.env.S2B_URL}/sales`);
+  url.searchParams.set("pageSize", "100");
+  if (cursor) url.searchParams.set("cursor", cursor);
+
+  const res = await fetch(url, { headers: { "x-api-key": process.env.S2B_KEY } });
+  const body = await res.json();
+  if (!res.ok) throw new Error(`${body.error.code}: ${body.error.message}`);
+
+  sales.push(...body.data.sales);
+  cursor = body.pagination.nextCursor;
+} while (cursor);
+```
+
+## Lists that are not paginated
+
+- `GET /v1/items` returns every item that has not been deleted, in one response.
+- `GET /v1/businesses` and `GET /v1/businesses/{businessId}/branches` return everything they have.
+- The `GET /v1/lookups/*` endpoints take a `limit` (1 to 200, default 50) and have no cursor. Narrow the result with
+  `query` or `codeClass` instead.
+
+## Read next
+
+- [Sales](/etims-guide-sales): the sales list
+- [Purchases](/etims-guide-purchases): the supplier invoice list

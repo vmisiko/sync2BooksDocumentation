@@ -1,0 +1,229 @@
+---
+title: "Quickstart"
+description: "Go from a test API key to your first KRA-signed receipt, replay-safe retry and credit note using copy-paste calls."
+---
+
+import { baseUrl } from "/snippets/etims-base-url.mdx";
+
+This quickstart takes you from a test key to a KRA-signed receipt and a credit note, against the KRA sandbox. It
+uses `curl`, with Node.js and Python versions of the sale call.
+
+All requests go to <code>{baseUrl}</code>. The same address serves the sandbox and production: the key you
+send decides which one you reach.
+
+## Before you start
+
+- A business added in the **compliance dashboard** with a sandbox eTIMS connection.
+- A dashboard **administrator** to create an API key for it. Only administrators can manage keys.
+
+<Steps>
+  <Step title="Get a test key">
+    In the compliance dashboard, select the business and open **Integrations**. Choose **Create API key**, pick
+    **Test** mode and copy the key. It is shown once. See [Authentication & API keys](/etims-authentication#getting-a-key).
+
+    Put the key and the base URL in your shell. The key below is a placeholder:
+
+    ```bash
+    export S2B_URL="https://sync2books-compliance-api.apps.kintro.money/v1"
+    export S2B_KEY="cmp_sk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+    ```
+  </Step>
+
+  <Step title="Check the key">
+    ```bash
+    curl "$S2B_URL/me" -H "x-api-key: $S2B_KEY"
+    ```
+
+    ```json
+    {
+      "data": {
+        "applicationId": "app_example_1",
+        "environment": "SANDBOX",
+        "businessId": "biz_example_1",
+        "scope": "business",
+        "scopes": ["catalog:read", "catalog:write", "sales:read", "sales:write", "stock:write", "purchases:read", "lookups:read"],
+        "rateLimitPerMin": 120
+      }
+    }
+    ```
+
+    `environment` is `SANDBOX` for a test key. `scope` is `business` when the key is limited to one business, and
+    then `businessId` is that business. `scopes` lists what the key may do, and `rateLimitPerMin` is your request
+    budget.
+  </Step>
+
+  <Step title="Create an item">
+    Every sale line refers to a registered item. Create one:
+
+    ```bash
+    curl -X POST "$S2B_URL/items" \
+      -H "x-api-key: $S2B_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "externalId": "SKU-1042",
+        "name": "500ml Cooking Oil",
+        "taxCategory": "VAT_STANDARD",
+        "productTypeCode": "2",
+        "classificationCode": "50150000",
+        "unitCode": "U",
+        "packagingUnitCode": "NT",
+        "unitPrice": 3500
+      }'
+    ```
+
+    The response is `201` with the item. Its `registrationStatus` is `PENDING`: it exists, but KRA does not know it
+    yet. Keep the item `id`. To find a `classificationCode`, see [Items](/etims-guide-items#find-the-codes).
+  </Step>
+
+  <Step title="Register it with KRA">
+    ```bash
+    curl -X POST "$S2B_URL/items/{id}/register" -H "x-api-key: $S2B_KEY"
+    ```
+
+    The item comes back with `registrationStatus` set to `REGISTERED`. If you get a `422` with the code
+    `item_incomplete`, read `error.item.needs` to see what is missing.
+  </Step>
+
+  <Step title="Add opening stock">
+    Goods are stock-tracked, so a sale deducts stock. Add some first:
+
+    ```bash
+    curl -X POST "$S2B_URL/stock/adjustments" \
+      -H "x-api-key: $S2B_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{ "itemId": "{id}", "action": "ADD", "quantity": 100, "unitPrice": 2800 }'
+    ```
+
+    The response is `201` with `quantityOnHand`. Services are not stock-tracked and need no stock.
+  </Step>
+
+  <Step title="Issue a sale">
+    Always send an `Idempotency-Key`, so a retried request cannot file a second invoice. Prices are tax inclusive.
+
+    ```bash
+    curl -X POST "$S2B_URL/sales" \
+      -H "x-api-key: $S2B_KEY" \
+      -H "Idempotency-Key: quickstart-sale-0001" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "traderInvoiceNumber": "INV-2026-0001",
+        "saleDate": "2026-10-02",
+        "lines": [{ "itemId": "{id}", "quantity": 2, "unitPrice": 3500 }],
+        "customer": { "name": "Example Customer Ltd", "pin": "P000000000X" }
+      }'
+    ```
+
+    A `201` means KRA accepted the sale. The response includes the signed receipt, abridged here:
+
+    ```json
+    {
+      "data": {
+        "sale": {
+          "id": "sale_example_1",
+          "type": "sale",
+          "status": "completed",
+          "totals": { "total": 7000, "taxableAmount": 6034.48, "taxAmount": 965.52 },
+          "receipt": {
+            "cuInvoiceNo": "KRACU0000000000/12 NS",
+            "signature": "AAAA-BBBB-CCCC",
+            "verificationUrl": "https://etims-verify.example/receipt?id=EXAMPLE"
+          }
+        }
+      }
+    }
+    ```
+
+    The VAT is split out of the price for you, line by line, from the item's tax type.
+
+    <CodeGroup>
+    ```javascript Node.js
+    // Node 18+
+    const res = await fetch(`${process.env.S2B_URL}/sales`, {
+      method: "POST",
+      headers: {
+        "x-api-key": process.env.S2B_KEY,
+        "Idempotency-Key": "quickstart-sale-0001",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        traderInvoiceNumber: "INV-2026-0001",
+        saleDate: "2026-10-02",
+        lines: [{ itemId: "ITEM_ID", quantity: 2, unitPrice: 3500 }],
+      }),
+    });
+    const { data, error } = await res.json();
+    if (!res.ok && res.status !== 202) throw new Error(`${error.code}: ${error.message}`);
+    console.log(data.sale.status, data.sale.receipt?.cuInvoiceNo);
+    ```
+
+    ```python Python
+    import os, requests
+
+    res = requests.post(
+        f"{os.environ['S2B_URL']}/sales",
+        headers={
+            "x-api-key": os.environ["S2B_KEY"],
+            "Idempotency-Key": "quickstart-sale-0001",
+        },
+        json={
+            "traderInvoiceNumber": "INV-2026-0001",
+            "saleDate": "2026-10-02",
+            "lines": [{"itemId": "ITEM_ID", "quantity": 2, "unitPrice": 3500}],
+        },
+    )
+    body = res.json()
+    if res.status_code not in (200, 201, 202):
+        raise RuntimeError(f"{body['error']['code']}: {body['error']['message']}")
+    print(body["data"]["sale"]["status"])
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Download the receipt">
+    ```bash
+    curl "$S2B_URL/sales/{saleId}/receipt" -H "x-api-key: $S2B_KEY" -o receipt.pdf
+    ```
+
+    Add `?copy=true` for a customer copy marked COPY.
+  </Step>
+
+  <Step title="Repeat the sale safely">
+    Send step 6 again with the same `Idempotency-Key`. Use `-i` to see the headers:
+
+    ```bash
+    curl -i -X POST "$S2B_URL/sales" \
+      -H "x-api-key: $S2B_KEY" \
+      -H "Idempotency-Key: quickstart-sale-0001" \
+      -H "Content-Type: application/json" \
+      -d '{ "traderInvoiceNumber": "INV-2026-0001", "saleDate": "2026-10-02", "lines": [{ "itemId": "{id}", "quantity": 2, "unitPrice": 3500 }] }'
+    ```
+
+    The answer is `200` with the header `Idempotent-Replayed: true`, and nothing is filed with KRA again. See
+    [Idempotency](/etims-idempotency).
+  </Step>
+
+  <Step title="Issue a credit note">
+    ```bash
+    curl -X POST "$S2B_URL/credit-notes" \
+      -H "x-api-key: $S2B_KEY" \
+      -H "Idempotency-Key: quickstart-credit-0001" \
+      -H "Content-Type: application/json" \
+      -d '{ "traderInvoiceNumber": "CN-2026-0001", "returnDate": "2026-10-03", "saleId": "{saleId}", "reason": "06" }'
+    ```
+
+    The credit note reverses the whole sale. Its totals are negative, and `receipt.originalCuInvoiceNo` points back
+    at the sale. A sale can be credited once. See [Credit notes](/etims-guide-credit-notes).
+  </Step>
+</Steps>
+
+<Warning>
+  Never put a key in client-side code, a mobile app or a repository. Keep it on your server and load it from the
+  environment, as the examples above do.
+</Warning>
+
+## Read next
+
+- [Result callbacks](/etims-callbacks): get the KRA outcome pushed to your server
+- [Errors & Troubleshooting](/etims-errors): every error code and which ones are safe to retry
+- [Going live](/etims-going-live): switch from the sandbox to real tax documents
+- [API reference](/etims-api-reference): every endpoint

@@ -1,0 +1,23 @@
+---
+title: "eTIMS API Changelog"
+description: "Changes to the Compliance API's public /v1 surface and its documentation, newest first."
+---
+
+Changes to the `/v1` endpoints, and to the way they are documented, are listed here. A change that could break an
+existing integration is marked **breaking**.
+
+<Update label="2026-10-03" description="Initial publication">
+  The `/v1` surface is documented for the first time:
+
+  - **Items**: create, update, read and register items with KRA.
+  - **Sales**: issue sales, read them, list them, download the receipt as a PDF (with COPY receipts), and retry.
+  - **Credit notes**: full reversal of an accepted sale.
+  - **Stock**: adjustments and transfers between branches.
+  - **Purchases**: pull supplier invoices from KRA, then list and read them (`purchases:read`).
+  - **Lookups**: KRA code lists and item classifications.
+  - **Businesses**: list businesses and branches.
+  - **Result callbacks**: `callbackUrl` on sales and credit notes, with retries and a resend call. Callbacks are not
+    signed.
+  - **Idempotency** on sales and credit notes with the `Idempotency-Key` header.
+  - **Rate limits**: 120 requests per minute per application by default, with `X-RateLimit-*` headers.
+</Update>

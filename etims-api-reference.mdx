@@ -1,0 +1,69 @@
+---
+title: "eTIMS API Reference Overview"
+description: "The Compliance API's endpoints for items, sales, credit notes, stock, purchases and lookups. The pages under Endpoints are interactive: use a test key and call them from the browser."
+---
+
+import { baseUrl } from "/snippets/etims-base-url.mdx";
+
+The Compliance API registers items, issues KRA-signed sales and credit notes, records stock and reads supplier
+invoices for a Kenyan business. This is the reference for its endpoints. For a guided path, start with the
+[Quickstart](/etims-quickstart).
+
+<Note>
+  This is a **separate product** from the [Accounting API](/api-reference). It has its own keys, its own base URL and
+  its own docs. See [Which API do I need?](/which-api).
+</Note>
+
+## Base URL and authentication
+
+All paths below start with `/v1` and are served from one address, for both the sandbox and production:
+
+<pre><code>{baseUrl}</code></pre>
+
+Send your API key in the `x-api-key` header, or as `Authorization: Bearer <key>`. The key decides whether you reach the
+KRA sandbox (`cmp_sk_test_...`) or production (`cmp_sk_live_...`). See [Authentication & API keys](/etims-authentication).
+
+```bash
+curl -H "x-api-key: cmp_sk_test_xxxxxxxxxxxxxxxxxxxxxxxx" "$S2B_URL/me"
+```
+
+## Conventions
+
+| | |
+|---|---|
+| Success | `{ "data": { ... } }`. Lists add `"pagination": { "nextCursor", "pageSize" }`. |
+| Errors | `{ "error": { "code", "message" } }`. See [Errors & Troubleshooting](/etims-errors). |
+| Repeats | Send an `Idempotency-Key` on sales and credit notes. See [Idempotency](/etims-idempotency). |
+| Paging | Cursor-based. See [Pagination](/etims-pagination). |
+| Limits | 120 requests per minute per application by default. See [Rate limits](/etims-rate-limits). |
+| Money | Kenya shillings, and sale prices are tax inclusive. |
+
+## Resources at a glance
+
+| Resource | What it is for | Scope |
+|---|---|---|
+| **Identity** | `GET /v1/me`: what the key can do | none |
+| **Businesses** | The businesses and branches a key can act for | `lookups:read` |
+| **Items** | Create items and register them with KRA | `catalog:read`, `catalog:write` |
+| **Stock** | Adjust and transfer stock | `stock:write` |
+| **Sales** | Issue sales, read them, download receipts, retry, resend callbacks | `sales:read`, `sales:write` |
+| **Credit notes** | Reverse an accepted sale in full | `sales:write` |
+| **Purchases** | Fetch and read supplier invoices KRA holds | `purchases:read` |
+| **Lookups** | KRA code lists and item classifications | `lookups:read` |
+
+The endpoint pages are generated from the OpenAPI specification, with a request and response example for each call.
+
+## Try it
+
+Open an endpoint, enter a **test** key once and send the request from the browser.
+
+<Warning>
+  Use a test key in the playground. Never paste a live key into a shared browser or a shared screen: a live call
+  files a real tax document.
+</Warning>
+
+## Read next
+
+- [Quickstart](/etims-quickstart): your first receipt in a few calls
+- [Core concepts](/etims-concepts): the ideas behind the endpoints
+- [Errors & Troubleshooting](/etims-errors): what the errors mean

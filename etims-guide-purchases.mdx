@@ -1,0 +1,74 @@
+---
+title: "Purchases"
+description: "Fetch the supplier invoices KRA holds against a business, then list and read them."
+---
+
+When a supplier issues an eTIMS invoice to your business, KRA records it against your PIN. These are your
+**purchases**. The API fetches them from KRA and lets you read them. It does not change them: confirming or
+rejecting a supplier invoice is done in the compliance dashboard.
+
+All three calls need the `purchases:read` scope.
+
+## Pull from KRA
+
+`POST /v1/purchases/pull` asks KRA for the business's supplier invoices and stores them, branch by branch. The body
+is optional.
+
+```bash
+curl -X POST "$S2B_URL/purchases/pull" -H "x-api-key: $S2B_KEY"
+```
+
+Leave the body out to pull every branch, or send `{ "branchId": "..." }` for one. Pulling again never changes an
+invoice's review status.
+
+The response is a report of how each branch went:
+
+```json
+{
+  "data": {
+    "fetched": 3,
+    "branches": [
+      {
+        "branchId": "br_example_1",
+        "kraBhfId": "00",
+        "displayName": "Head Office",
+        "status": "ok",
+        "fetched": 3,
+        "error": null
+      }
+    ]
+  }
+}
+```
+
+Each branch has a `status` of `ok` or `failed`. A branch that failed does not stop the others, and says why in
+`error`.
+
+If KRA returns nothing for **every** branch, so that all of them fail, the call is a `502` with the code `upstream_error`, and the same
+per-branch report is in the error body under `branches`. We do this on purpose: an empty success would read as
+"you have no purchases". Try again shortly.
+
+## List supplier invoices
+
+`GET /v1/purchases` lists the stored invoices, newest first, a page at a time. Call the pull first to get the
+latest.
+
+```bash
+curl "$S2B_URL/purchases?status=pulled&startDate=2026-09-01&endDate=2026-09-30&pageSize=50" \
+  -H "x-api-key: $S2B_KEY"
+```
+
+| Query parameter | Meaning |
+|---|---|
+| `status` | `pulled`, `pending_review`, `confirmed` or `rejected` |
+| `startDate`, `endDate` | `YYYY-MM-DD`, inclusive |
+| `pageSize`, `cursor` | Paging. See [Pagination](/etims-pagination). |
+
+`GET /v1/purchases/{id}` returns one invoice. Each invoice has the supplier (`name`, `pin`),
+`supplierInvoiceNumber`, `invoiceDate`, `branch`, `totals` (`subtotal`, `vat`, `total`), its `lines`, and a
+`confirmationError` if the last attempt to confirm it to KRA failed.
+
+## Read next
+
+- [Pagination](/etims-pagination): walk through a long list
+- [Errors & Troubleshooting](/etims-errors): handling a `502`

@@ -1,0 +1,102 @@
+---
+title: "Items"
+description: "Create items, find the KRA codes they need, register them with KRA, and handle a registration that is rejected or incomplete."
+---
+
+An item must be **registered** with KRA before it can be sold. This guide walks through creating one, finding the
+codes it needs, registering it and fixing it when registration does not go through. For the full field list see
+[Item Attributes](/etims-item-attributes).
+
+## Create or update an item
+
+`POST /v1/items` needs the `catalog:write` scope.
+
+```bash
+curl -X POST "$S2B_URL/items" \
+  -H "x-api-key: $S2B_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "SKU-1042",
+    "name": "500ml Cooking Oil",
+    "sku": "COOK-OIL-500",
+    "taxCategory": "VAT_STANDARD",
+    "productTypeCode": "2",
+    "classificationCode": "50150000",
+    "unitCode": "U",
+    "packagingUnitCode": "NT",
+    "unitPrice": 3500
+  }'
+```
+
+| Field | Required | Limit |
+|---|---|---|
+| `externalId` | Yes | Up to 100 characters. Your own id; sending it again updates the same item. |
+| `name` | Yes | Up to 200 characters. |
+| `taxCategory` | Yes | `VAT_STANDARD`, `VAT_ZERO`, `EXEMPT`, `OTHER` or `VAT_8`. |
+| `productTypeCode` | Yes | The string `"1"`, `"2"` or `"3"`. |
+| `sku` | No | Up to 100 characters. |
+| `classificationCode` | Before registering | Up to 20 characters. |
+| `unitCode` | No | Up to 2 characters. |
+| `packagingUnitCode` | No | Up to 2 characters. |
+| `unitPrice` | No | A number, 0 or more. |
+
+The call returns `201` for both a create and an update, with the item under `data.item`. A new item starts with
+`registrationStatus: "PENDING"`. Creating an item does **not** register it with KRA.
+
+Numbers must be JSON numbers: `"unitPrice": "3500"` is refused with a `400`.
+
+## Find the codes
+
+Three of the fields take KRA codes. Look them up instead of guessing:
+
+| Field | Look it up with |
+|---|---|
+| `classificationCode` | `GET /v1/lookups/classifications?query=oil`, or the [Item Classification Codes](/etims-item-classification-codes) table |
+| `unitCode` | `GET /v1/lookups/codes?codeClass=10` |
+| `packagingUnitCode` | `GET /v1/lookups/codes?codeClass=17` |
+
+These calls need the `lookups:read` scope. See [Codes & Values](/etims-codes) for the common values.
+
+## Register the item with KRA
+
+`POST /v1/items/{id}/register` also needs `catalog:write`. The body is optional.
+
+```bash
+curl -X POST "$S2B_URL/items/{id}/register" -H "x-api-key: $S2B_KEY"
+```
+
+On success the call returns `200` with the item, now `REGISTERED`.
+
+| Body field | Meaning |
+|---|---|
+| `branchId` | The branch to register for. Defaults to the business's first branch. |
+| `force` | Set to `true` to register again an item KRA already has. |
+
+## When registration does not work
+
+A failed registration is a `422`, and the error body includes the `item` so you can see its `needs` and
+`registrationStatus`.
+
+| Error `code` | What it means | What to do |
+|---|---|---|
+| `item_incomplete` | KRA was never asked: the item is missing something. | Read `item.needs`, add the missing field with `POST /v1/items`, then register again. |
+| `kra_rejected` | KRA answered and refused. `message` carries KRA's reason. | Fix the value KRA names, update the item, register again. |
+| `registration_failed` | The attempt did not complete and KRA gave no verdict. | Retry. Contact support if it keeps happening. |
+
+A rejection such as `...can only be among the following list: [...]` means a code is not on KRA's list. See
+[Errors & Troubleshooting](/etims-errors).
+
+## Read items
+
+- `GET /v1/items` returns every item of the business that has not been deleted, in one response. It is not
+  paginated. It needs `catalog:read`.
+- `GET /v1/items/{id}` returns one item. An unknown id, an id from another business and a deleted item all give `404`.
+
+Items cannot be deleted or updated by id through the API. To change an item, send `POST /v1/items` with the same
+`externalId`.
+
+## Read next
+
+- [Item Attributes](/etims-item-attributes): every field, and the response fields
+- [Stock](/etims-guide-stock): add stock for registered goods
+- [Sales](/etims-guide-sales): sell a registered item

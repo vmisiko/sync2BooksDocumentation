@@ -1,0 +1,89 @@
+---
+title: "Stock"
+description: "Add, deduct and transfer stock for registered goods, and see how each movement is reported to KRA."
+---
+
+Goods are **stock-tracked**: selling one deducts stock, and KRA is told about each movement. This guide covers the
+two calls that change stock. Both need the `stock:write` scope and a registered item.
+
+<Note>
+  The API only writes stock. There is no endpoint that lists stock on hand or past movements. Each response tells
+  you the resulting `quantityOnHand`, and the dashboard shows the full picture.
+</Note>
+
+## Adjust stock
+
+`POST /v1/stock/adjustments` adds or deducts stock for an item at a branch.
+
+```bash
+curl -X POST "$S2B_URL/stock/adjustments" \
+  -H "x-api-key: $S2B_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "itemId": "{id}",
+    "action": "ADD",
+    "quantity": 100,
+    "unitPrice": 2800,
+    "referenceId": "OPENING-2026-10"
+  }'
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `itemId` | Yes | A registered item of this business. |
+| `action` | Yes | `ADD` or `DEDUCT`. |
+| `quantity` | Yes | A number greater than 0. |
+| `branchId` | No | Defaults to the business's first branch. |
+| `unitPrice` | No | A number, 0 or more. |
+| `referenceId` | No | Your own reference for the movement, up to 100 characters. |
+
+The call returns `201`:
+
+```json
+{
+  "data": {
+    "itemId": "itm_example_1",
+    "branchId": "br_example_1",
+    "movementId": "mov_example_1",
+    "quantityOnHand": 100,
+    "etims": {
+      "stockIo": { "status": "ok" },
+      "stockMaster": { "status": "ok" }
+    }
+  }
+}
+```
+
+`etims.stockIo` and `etims.stockMaster` report the two steps by which the movement reaches KRA. Each has a
+`status` of `ok`, `skipped` or `failed`, and a `reason` when it was not `ok`.
+
+## Transfer stock between branches
+
+`POST /v1/stock/transfers` moves stock of one item between two branches of the business.
+
+```bash
+curl -X POST "$S2B_URL/stock/transfers" \
+  -H "x-api-key: $S2B_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "itemId": "{id}", "fromBranchId": "{branchA}", "toBranchId": "{branchB}", "quantity": 10 }'
+```
+
+`itemId`, `fromBranchId`, `toBranchId` and `quantity` are required. `unitPrice` and `referenceId` are optional. The
+call returns `201` with the `quantityOnHand` on both sides. An unknown item or branch is a `404`.
+
+## Selling and stock
+
+A sale of a stock-tracked item deducts stock. If there is not enough, the sale is refused with a `409` and the code
+`insufficient_stock`. So add stock before you sell, and add more when you receive goods.
+
+## Each call is a separate movement
+
+Treat every stock call as its own movement, and do not rely on `referenceId` to stop a repeat. If a request times
+out and you are not sure it was applied, check the resulting `quantityOnHand` in the dashboard before you send it
+again. Use `referenceId` to keep your own record of what each movement was for.
+
+## Read next
+
+- [Items](/etims-guide-items): register the item first
+- [Sales](/etims-guide-sales): selling deducts stock
+- [Idempotency](/etims-idempotency): which calls are safe to repeat
