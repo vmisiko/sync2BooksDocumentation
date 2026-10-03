@@ -1,119 +1,118 @@
 ---
-title: "eTIMS Compliance Overview"
-description: "Connect your invoicing system to KRA eTIMS without building against KRA yourself — how the integration is shaped, and how to get access while the developer API is being finalised."
+title: "eTIMS API Overview"
+description: "Use the Sync2Books Compliance API to register items, issue KRA-signed sales and credit notes, and keep a Kenyan business eTIMS-compliant without certifying with KRA yourself."
 ---
 
-Sync2Books connects a Kenyan business to **KRA eTIMS** so its invoices carry a valid, KRA-signed
-receipt. We hold the eTIMS device credentials, speak the OSCU protocol, own the KRA sequence
-numbers and render the compliant receipt. You never certify with KRA, never handle a control
-unit, and never call KRA yourself.
+The **Sync2Books Compliance API** connects a Kenyan business to **KRA eTIMS** so its invoices carry a valid,
+KRA-signed receipt. We hold the eTIMS device credentials, speak the OSCU protocol, own the KRA sequence
+numbers and render the compliant receipt. You never certify with KRA, never handle a control unit, and
+never call KRA yourself.
 
 <Note>
-  **The developer API is being finalised.** eTIMS integration now runs entirely through the
-  **Sync2Books Compliance platform** — the dashboard and its own API — rather than through the
-  Accounting API. The endpoint reference for the new surface is published when it is stable; see
-  [Getting access](#getting-access) below for how to start in the meantime.
+  This is a separate product from the [Accounting API](/api-reference), which writes expenses, bills and
+  invoices into accounting software. The two have different keys, different base URLs and different docs.
+  If you are not sure which one you need, read [Which API do I need?](/which-api).
 </Note>
 
 ## Who this is for
 
-You're a developer at a business — or building software for businesses — that invoices in Kenya
-and needs eTIMS compliance. Instead of going through KRA certification, device onboarding and
-the OSCU specification, the business is onboarded once in the **compliance dashboard**, and your
-software then pushes items, stock, sales and credit notes through the **Compliance API**.
+You build software for a business, or for many businesses, that invoices in Kenya and must issue
+eTIMS-compliant receipts. The business is onboarded once in the **compliance dashboard**. Your software then
+calls the API to register items, record stock, issue sales and credit notes, and fetch receipts.
 
-## Two surfaces: dashboard and API
+## What you can do
 
-Setup is no-code in the dashboard; daily operations are programmatic.
+- Create items and **register** them with KRA.
+- **Issue sales** and get back a KRA-signed receipt: control unit invoice number, receipt signature and a
+  verification URL.
+- Issue a **credit note** that reverses a sale in full.
+- Download the receipt as a **PDF**, or a customer copy marked COPY.
+- Record **stock** movements: adjustments and transfers between branches.
+- Fetch the **supplier invoices** KRA holds against the business.
+- Look up **KRA code lists** and item classifications.
+- Get the KRA result sent to your server with a **callback**, instead of polling.
+
+## Dashboard and API
+
+Setup is no-code in the dashboard. Daily operations are programmatic.
 
 | | **Compliance dashboard** (one-time, no-code) | **Compliance API** (ongoing, programmatic) |
 |---|---|---|
-| Register the business (KRA PIN, branch, device serial) | ✅ | |
-| Initialise the KRA device for a branch | ✅ | |
-| Issue and revoke API keys | ✅ | |
-| Sync KRA reference data (code lists, item classifications) | ✅ | ✅ |
-| Register and sync catalog items | ✅ | ✅ |
-| Record stock movements | ✅ | ✅ |
-| Issue sales and credit notes | ✅ | ✅ |
-| Download and reprint receipts | ✅ | ✅ |
-| Monitor submission status and KRA errors | ✅ | ✅ |
+| Register the business (KRA PIN, branch, device serial) | Yes | |
+| Initialise the KRA device for a branch | Yes | |
+| Issue and revoke API keys | Yes | |
+| Read KRA code lists and item classifications | Yes | Yes |
+| Create and register items | Yes | Yes |
+| Record stock movements | Yes | Yes |
+| Issue sales and credit notes | Yes | Yes |
+| Download and reprint receipts | Yes | Yes |
+| Fetch supplier invoices from KRA | Yes | Yes |
+| Confirm or reject supplier invoices | Yes | |
+| Monitor submission status and KRA errors | Yes | Yes |
 
-In short: **the dashboard handles eTIMS onboarding; your code handles invoicing.** You never have
-to script KRA onboarding to get going, and a business that doesn't want to integrate at all can
-run entirely from the dashboard.
+In short: **the dashboard handles eTIMS onboarding; your code handles invoicing.** A business that does not
+want to integrate at all can run entirely from the dashboard.
 
 ## How it works
 
-One kind of request — to the Compliance API, with your API key:
+Your application makes one kind of request, to the Compliance API, with your API key:
 
 ```
 ┌───────────────────┐        ┌──────────────┐        ┌────────────┐
 │  Your application │  HTTPS │  Sync2Books  │  OSCU  │  KRA eTIMS │
 │  (uses API key)   │ ─────▶ │  Compliance  │ ─────▶ │            │
-│                   │ ◀───── │              │ ◀───── │            │
+│                   │ ◀───── │     API      │ ◀───── │            │
 └───────────────────┘        └──────────────┘        └────────────┘
 ```
 
-Your API key is scoped to one business and one environment — a sandbox key can only address
-sandbox businesses, a live key only production ones — so it can never act for another taxpayer
-or cross into the wrong eTIMS environment.
+A key acts for one business by default, and a test key can only act on sandbox businesses while a live key can
+only act on production ones. A key can never act for another taxpayer or cross into the wrong eTIMS
+environment. See [Authentication & API keys](/etims-authentication).
 
-## What you'll be doing
+## The path to your first receipt
 
-The sequence is fixed by KRA's own dependency order, and it's worth knowing before you start:
+The order is fixed by KRA's own dependencies, so it is worth knowing before you start.
 
-1. **Register the business and initialise its device** (dashboard). One-time, per branch.
-2. **Sync reference data** — KRA's code lists and item classifications. These are the values
-   every later submission is validated against, so they're fetched from KRA rather than
-   hard-coded. See [Codes & Values](/etims-codes).
-3. **Register your catalog.** An item must exist and be registered with KRA before it can be
-   invoiced. Goods are stock-tracked; services are not.
-4. **Record opening stock** for goods, before you sell them.
-5. **Submit sales and credit notes.** Each one is validated, mapped to the OSCU payload, given
-   its KRA-owned sequence number, and submitted. A credit note must reference an accepted sale.
-6. **Retrieve the receipt** — a TIS-conformant PDF with the KRA verification QR code.
+1. **Get a key.** Create one on the business's Integrations page in the compliance dashboard. See
+   [Authentication & API keys](/etims-authentication#getting-a-key).
+2. **Check it** with `GET /v1/me`.
+3. **Create an item** with `POST /v1/items`, then **register it** with KRA with `POST /v1/items/{id}/register`.
+   See [Items](/etims-guide-items).
+4. **Add opening stock** for goods with `POST /v1/stock/adjustments`. See [Stock](/etims-guide-stock).
+5. **Issue a sale** with `POST /v1/sales`. See [Sales](/etims-guide-sales).
+6. **Download the receipt** with `GET /v1/sales/{id}/receipt`.
+7. **Issue a credit note** with `POST /v1/credit-notes` if the sale has to be reversed. See
+   [Credit notes](/etims-guide-credit-notes).
+8. **Go live** with a live key. See [Going live](/etims-going-live).
 
-When something is rejected, KRA's own reason comes back with it; see
+When KRA rejects something, its own reason comes back with the error. See
 [Errors & Troubleshooting](/etims-errors).
-
-## Getting access
-
-Access to the Compliance API is per business, by API key issued from the compliance dashboard.
-Self-service issuance and rotation in the dashboard UI is being delivered — until it ships, a key
-is issued to you by Sync2Books on request, with the same scoping described above.
-
-To get started:
-
-1. **Sign up for the compliance dashboard** and create your organisation.
-2. **Add your business** — KRA PIN, branch (`bhfId`), trade address and device serial. For
-   production these come from KRA's own onboarding; see
-   [eTIMS as a Third-Party Integrator (OSCU)](/ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY) for where
-   each value comes from. Sandbox values are fine while you're building.
-3. **Request an API key** for that business, naming the environment you want.
 
 ## Where to go next
 
 <CardGroup cols={2}>
-  <Card title="Item Attributes" icon="table-list" href="/etims-item-attributes">
-    The full catalog item data model — required and optional fields, and how each maps to KRA's
-    OSCU registration.
+  <Card title="Quickstart" icon="bolt" href="/etims-quickstart">
+    From a key to your first KRA-signed receipt and credit note, with copy-paste calls.
   </Card>
-  <Card title="Item Classification Codes" icon="tags" href="/etims-item-classification-codes">
-    KRA's official item classification list (`itemClsCd`) — pick the code that matches a product.
+  <Card title="Authentication & API keys" icon="key" href="/etims-authentication">
+    Where keys come from, what scopes do, and how test and live keys differ.
   </Card>
-  <Card title="Codes & Values" icon="list" href="/etims-codes">
-    The KRA code values catalog and sales fields take — item types, packaging and quantity units,
-    tax, payment and receipt types.
+  <Card title="Core concepts" icon="book" href="/etims-concepts">
+    Businesses, branches, items, tax-inclusive pricing and the sale lifecycle.
+  </Card>
+  <Card title="Result callbacks" icon="bell" href="/etims-callbacks">
+    Get the KRA outcome sent to your server instead of polling for it.
   </Card>
   <Card title="Errors & Troubleshooting" icon="triangle-exclamation" href="/etims-errors">
-    How to read a rejection, tell a data problem from a system one, and know when it's safe to
-    retry.
+    The error format, every error code, and which failures are safe to retry.
   </Card>
-  <Card title="Third-party integrator (OSCU)" icon="stamp" href="/ETIMS_OSCU_INTEGRATION_AS_THIRD_PARTY">
-    KRA's own onboarding and certification process, and where the values you enter come from.
+  <Card title="Going live" icon="rocket" href="/etims-going-live">
+    A checklist for moving from the sandbox to real tax documents.
   </Card>
-  <Card title="Technology architecture" icon="diagram-project" href="/etims-architecture">
-    How fiscal data reaches KRA, how device credentials are held, and the receipt conformance
-    rules — the document submitted for certification.
+  <Card title="API reference" icon="code" href="/etims-api-reference">
+    Every endpoint, with request and response examples you can try with a test key.
+  </Card>
+  <Card title="Codes & Values" icon="list" href="/etims-codes">
+    Tax categories, units, packaging, payment types and credit note reasons.
   </Card>
 </CardGroup>

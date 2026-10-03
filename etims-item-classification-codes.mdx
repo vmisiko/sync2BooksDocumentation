@@ -1,19 +1,18 @@
 ---
 title: "Item Classification Codes"
-description: "KRA's official item classification list (itemClsCd) — the code every catalog item needs before it can be registered with KRA."
+description: "KRA's official item classification list (itemClsCd) — the code every item needs before it can be registered with KRA."
 ---
 
-Every catalog item needs a **classification code** (`itemClsCd`) before it can be registered with
+Every item needs a **classification code** (`itemClsCd`) before it can be registered with
 KRA — see [Item Attributes](/etims-item-attributes). This page lists the classification codes KRA
 publishes, so you can pick the one that best matches a product without digging through the raw
 TIS specification.
 
 <Note>
-  This is a reference snapshot, not a live lookup. KRA maintains this list on its own servers and
-  can add or retire codes; Sync2Books keeps its working copy in sync via the OSCU `/selectItemClsList`
-  call described in the [TIS specification](https://kra.go.ke/images/publications/TIS-for-OSCU--VSCU-Technical-Specifications-v2.0.pdf).
-  A live `GET` lookup endpoint on the Compliance API is planned but not yet generally available —
-  see the note on [Item Attributes](/etims-item-attributes).
+  This table is a snapshot. KRA maintains the list on its own servers and can add or retire codes, so the live
+  lookup is authoritative: search it with `GET /v1/lookups/classifications?query=...`, or fetch one code with
+  `GET /v1/lookups/classifications/{code}`. Both need the `lookups:read` scope. See
+  [Items](/etims-guide-items#find-the-codes) and the [TIS specification](https://kra.go.ke/images/publications/TIS-for-OSCU--VSCU-Technical-Specifications-v2.0.pdf).
 </Note>
 
 ## Columns
@@ -1042,4 +1041,4 @@ Use your browser's find-in-page (Cmd/Ctrl+F) to search by code or keyword.
 
 - [Item Attributes](/etims-item-attributes) — the full item data model, including `classificationCode`
 - [Codes & Values](/etims-codes) — tax, unit, packaging and payment codes
-- [eTIMS Overview](/etims-overview) — how catalog registration fits the wider sync flow
+- [Items](/etims-guide-items) — create and register items step by step

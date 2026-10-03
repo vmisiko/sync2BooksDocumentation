@@ -1,17 +1,17 @@
 ---
 title: "Codes & Values"
-description: "Several catalog and sales fields take codes. This page lists the values Sync2Books recognizes so you can fill them in correctly for your items and packaging."
+description: "The KRA codes that item, sale and credit note fields take, with the common values and the endpoints that return the full lists."
 ---
 
-Several catalog and sales fields take **codes**. This page lists the values Sync2Books recognizes so you can fill them in correctly for your items and packaging.
+Several item, sale and credit note fields take **codes**. This page lists the common values so you can fill them in correctly.
 
-> **The good news:** most codes are resolved for you. You only ever *must* supply a **classification code** (and even that can be pre-configured for your account). Everything else has a sensible default or a simple enum.
+> **The good news:** you only ever *must* supply a **classification code**. Everything else has a sensible default or a simple enum.
 
-> There is **no live lookup endpoint** yet — the tables below are the values the API accepts out of the box. For the complete, authoritative KRA lists (especially item classifications), use the [KRA references](#kra-references) at the bottom.
+> The tables below list the common values. For the complete, authoritative lists, read them live: `GET /v1/lookups/code-classes` lists KRA's code groups, `GET /v1/lookups/codes?codeClass=10` returns the codes in one group, and `GET /v1/lookups/classifications` searches item classifications. These endpoints need the `lookups:read` scope. See the [API reference](/etims-api-reference).
 
 ## Tax category
 
-Send `taxCategory` (an enum) when registering an item and on each sale line. Sync2Books maps it to the correct KRA tax type automatically — you don't send a tax code yourself.
+Send `taxCategory` (an enum) when you create an item. Sync2Books maps it to the correct KRA tax type automatically — you don't send a tax code yourself. The tax on a sale always comes from the item, never from the sale request.
 
 | `taxCategory` | KRA tax type | Meaning |
 |---------------|--------------|---------|
@@ -19,39 +19,21 @@ Send `taxCategory` (an enum) when registering an item and on each sale line. Syn
 | `VAT_ZERO` | C | Zero-rated (0%) |
 | `EXEMPT` | A | Exempt |
 | `OTHER` | D | Non-VAT / other |
+| `VAT_8` | E | Reduced-rate VAT (8%) |
 
-> Need a special rate (e.g. VAT 8%) that the enum doesn't cover? Set the KRA tax type explicitly via `taxTyCd` on item register, or contact support.
+## Product type
 
-## Item type & product type
-
-`itemType` sets whether an item is stock-tracked — goods are, services are not — and selects the KRA product type:
-
-| `itemType` | KRA product type | Stock-tracked |
-|-----------|------------------|---------------|
-| `GOODS` | `2` (Finished Product) | Yes |
-| `SERVICE` | `3` (Service) | No |
-
-To use a different KRA product type — e.g. **raw materials** — set `productTypeCode` explicitly on register:
+Send `productTypeCode` when you create an item. It is a string, and it selects the KRA product type. Goods (`1` and `2`) are stock-tracked and services (`3`) are not.
 
 | `productTypeCode` | Meaning |
 |-------------------|---------|
-| `1` | Raw Material |
-| `2` | Finished Product |
-| `3` | Service |
+| `"1"` | Raw Material |
+| `"2"` | Finished Product |
+| `"3"` | Service |
 
 ## Units & packaging
 
-You have two options when registering an item:
-
-**Option A — let Sync2Books resolve them.** Send `internalUnit` with one of these recognized values and the quantity/packaging codes are filled in for you:
-
-| `internalUnit` | → `unitCode` | → `packagingUnitCode` |
-|----------------|-------------|------------------------|
-| `EA`, `EACH`, `PCS` | `U` | `NT` |
-| `KG`, `KILOGRAM` | `KG` | `NT` |
-| `L`, `LTR`, `LITRE` | `LTR` | `NT` |
-
-**Option B — pass the KRA codes directly** via `unitCode` and `packagingUnitCode`:
+Pass the KRA codes in `unitCode` (quantity unit) and `packagingUnitCode` (packaging unit) when you create an item.
 
 Quantity unit (`unitCode`):
 
@@ -69,11 +51,11 @@ Packaging unit (`packagingUnitCode`):
 | `BL` | Bale |
 | `BX` | Box |
 
-> These are the common units recognized out of the box. KRA defines many more (per the TIS spec). If you need a unit not listed here, pass its KRA code directly in `unitCode` / `packagingUnitCode`.
+> These are the common units. KRA defines many more. List them with `GET /v1/lookups/codes?codeClass=10` for quantity units and `GET /v1/lookups/codes?codeClass=17` for packaging units, and pass the code you choose.
 
 ## Payment type (sales)
 
-Send `paymentTypeCode` when creating a sale:
+Send `paymentTypeCode` when creating a sale. It defaults to `01` (cash).
 
 | Code | Method |
 |------|--------|
@@ -81,33 +63,41 @@ Send `paymentTypeCode` when creating a sale:
 | `02` | Credit |
 | `03` | Cash / Credit |
 | `04` | Bank cheque |
-| `05` | Debit & Credit |
-| `06` | Card |
-| `07` | Mobile money |
+| `05` | Debit & credit card |
+| `06` | Mobile money |
+| `07` | Other |
 | `08` | Other |
+
+The live list is `GET /v1/lookups/codes?codeClass=07`.
+
+## Credit note reasons
+
+Send `reason` when you issue a credit note. It defaults to `06`.
+
+| Code | Reason |
+|------|--------|
+| `01` | Missing quantity |
+| `02` | Missing data |
+| `03` | Damaged |
+| `04` | Wasted |
+| `05` | Raw material shortage |
+| `06` | Refund |
 
 ## Classification code (the one you must look up)
 
-`classificationCode` is the KRA **item classification** (`itemClsCd`) for the product — e.g. `14111400`. Unlike the other codes, **there is no default**: you must supply a valid code when registering an item, unless classification rules have been pre-configured for your account.
+`classificationCode` is the KRA **item classification** (`itemClsCd`) for the product — e.g. `50150000`. Unlike the other codes, **there is no default**: you must supply a valid code before an item can be registered.
 
-- Get valid codes from the **[Item Classification Codes](/etims-item-classification-codes)** reference (or KRA's own list — see [references](#kra-references)).
+- Search valid codes live with `GET /v1/lookups/classifications?query=...`, or browse the **[Item Classification Codes](/etims-item-classification-codes)** reference (or KRA's own list — see [references](#kra-references)).
 - Pick the code that best matches the product.
-- Once set, the item can be synced and sold.
+- Once set, the item can be registered and sold.
 
 See [Item Attributes](/etims-item-attributes) for the full item data model this code is part of.
 
-If you register without it and no rule applies, the request is rejected with `Missing classification mapping`.
+If you try to register an item without one, the call is a `422` with the code `item_incomplete`, and `item.needs.classificationMapping` is `true`.
 
 ## Other sale codes
 
-A sale also carries a couple of KRA status codes. Common values:
-
-| Field | Common value | Notes |
-|-------|--------------|-------|
-| `receiptTypeCode` | `S` | Normal sale |
-| `invoiceStatusCode` | `02` | Per KRA invoice/sale status codes |
-
-These follow the KRA TIS code lists — use the [references](#kra-references) for the full set.
+A sale also carries KRA receipt and invoice status codes, such as receipt type `S` for a normal sale and `R` for a credit note. The API sets these for you, so you never send them.
 
 ## KRA references
 
@@ -118,6 +108,6 @@ The authoritative, complete code lists are published by KRA:
 
 ## Read next
 
-- [eTIMS Overview](/etims-overview) — how the integration is shaped and how to get access
+- [eTIMS API Overview](/etims-overview) — how the integration is shaped
+- [Items](/etims-guide-items) — where these codes are used
 - [Errors & Troubleshooting](/etims-errors) — what a rejected value looks like coming back from KRA
-

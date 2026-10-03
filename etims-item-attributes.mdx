@@ -1,61 +1,68 @@
 ---
 title: "Item Attributes"
-description: "The fields that make up a catalog item in Sync2Books — what's required, what KRA expects, and how each one maps to eTIMS registration."
+description: "The fields that make up an item in the eTIMS API — what's required, what KRA expects, and what comes back."
 ---
 
-A **catalog item** is the same record whether it arrived by syncing your ERP's product/service
-list or was entered directly — it just isn't usable for KRA compliance until it carries the
-attributes below. Once an item has everything it needs, it can be **registered** with KRA and
-then appear on sales and credit notes.
+A **catalog item** is a product or service you sell. It is not usable for KRA compliance until it carries the
+attributes below. Once an item has everything it needs, it can be **registered** with KRA and then appear on sales
+and credit notes.
 
 <Note>
-  **The developer API for items is being finalised.** The attributes below already describe how
-  Sync2Books represents an item internally — including the fields KRA's OSCU protocol requires
-  on registration (`saveItem`) — and are being tested against the KRA sandbox now. A direct
-  `POST`/`GET` surface for items on the Compliance API ships once that testing is done; until
-  then, items are registered the way described in [eTIMS Overview](/etims-overview) (synced from
-  your ERP, or entered in the dashboard). See [Getting access](/etims-overview#getting-access)
-  for how to start in the meantime.
+  Create and update items with `POST /v1/items`, and register them with KRA with `POST /v1/items/{id}/register`.
+  The attributes below are the request fields. See [Items](/etims-guide-items) for the walkthrough and the
+  [API reference](/etims-api-reference) for the endpoints.
 </Note>
 
 ## Attributes table
 
 | Attribute | Required | Data Type | Description — Sample |
 |-----------|----------|-----------|------------------------|
-| `externalId` | Yes | string (≤100 chars) | Your own identifier for the item — the key Sync2Books upserts on. `"SKU-1042"` |
+| `externalId` | Yes | string (≤100 chars) | Your own identifier for the item — sending it again updates the same item. `"SKU-1042"` |
 | `name` | Yes | string (≤200 chars) | The item's name. `"500ml Cooking Oil"` |
 | `sku` | No | string (≤100 chars) | Your ERP's own SKU/code, kept for reference. `"COOK-OIL-500"` |
 | `taxCategory` | Yes | enum | `VAT_STANDARD` \| `VAT_ZERO` \| `EXEMPT` \| `OTHER` \| `VAT_8`. Maps to KRA's tax type (`taxTyCd`) automatically — see [Codes & Values](/etims-codes#tax-category). `"VAT_STANDARD"` |
 | `productTypeCode` | Yes | enum | KRA product type (`itemTyCd`): `"1"` Raw Material, `"2"` Finished Product, `"3"` Service. Goods (`1`/`2`) are stock-tracked; services (`3`) are not. `"2"` |
-| `classificationCode` | Yes before registration | string (≤20 chars) | KRA item classification code (`itemClsCd`). See [Item Classification Codes](/etims-item-classification-codes). Can be pre-configured per account via a mapping rule, so it's not always required at item-creation time — but registration fails without one. `"14111400"` |
-| `unitCode` | No | string (≤2 chars) | KRA quantity unit code (`qtyUnitCd`). See [Codes & Values](/etims-codes#units-&-packaging). `"U"` |
-| `packagingUnitCode` | No | string (≤2 chars) | KRA packaging unit code (`pkgUnitCd`). See [Codes & Values](/etims-codes#units-&-packaging). `"NT"` |
-| `unitPrice` | No | number (≥0) | Default unit price (`dftPrc`) used when a sale line doesn't specify its own. `3500` |
+| `classificationCode` | Yes before registration | string (≤20 chars) | KRA item classification code (`itemClsCd`). See [Item Classification Codes](/etims-item-classification-codes). Not required to create the item, but registration fails without one. Search with `GET /v1/lookups/classifications`. `"50150000"` |
+| `unitCode` | No | string (≤2 chars) | KRA quantity unit code (`qtyUnitCd`). See [Codes & Values](/etims-codes#units-&-packaging). List them with `GET /v1/lookups/codes?codeClass=10`. `"U"` |
+| `packagingUnitCode` | No | string (≤2 chars) | KRA packaging unit code (`pkgUnitCd`). See [Codes & Values](/etims-codes#units-&-packaging). List them with `GET /v1/lookups/codes?codeClass=17`. `"NT"` |
+| `unitPrice` | No | number (≥0) | The item's default unit price (`dftPrc`). It is returned on the item. A sale line always sends its own `unitPrice`. `3500` |
 
 `externalId` is the upsert key: sending it again with changed fields updates the same item rather
-than creating a duplicate. The item's own `id` (assigned once the item is created) is what sales
-and stock movements reference afterwards.
+than creating a duplicate. The item's own `id`, assigned when it is created, is what sales and stock movements
+reference afterwards.
+
+## Response fields
+
+Besides the fields you sent, an item in a response carries:
+
+| Field | Meaning |
+|-------|---------|
+| `id` | The item's id, used on sale lines and stock movements. |
+| `taxTypeCode` | The KRA tax type letter `taxCategory` maps to: `A`, `B`, `C`, `D` or `E`. |
+| `stockTracked` | `true` for goods, which have their stock deducted by sales. |
+| `registrationStatus` | Where the item stands with KRA. See below. |
+| `needs` | Why an item cannot be registered yet. See below. |
 
 ## Registration status
 
-Once submitted, an item carries a `registrationStatus` describing where it stands with KRA:
+An item carries a `registrationStatus` describing where it stands with KRA:
 
 | Value | Meaning |
 |-------|---------|
-| `PENDING` | Not yet registered with KRA — usually missing a required attribute. |
+| `PENDING` | Not yet registered with KRA. This is the state straight after you create an item. |
 | `REGISTERED` | Accepted by KRA (`saveItem` succeeded); the item can now be sold. |
 | `FAILED` | KRA rejected the registration — see [Errors & Troubleshooting](/etims-errors). |
 
-If an item is `PENDING`, it also reports **why**, so you know exactly what to fix:
+`needs` reports what is missing, so you know exactly what to fix:
 
 | Flag | Set when |
 |------|----------|
-| `needsProductType` | `productTypeCode` is missing. |
-| `needsClassificationMapping` | `classificationCode` is missing and no account-level mapping rule resolved one. |
+| `needs.productType` | `productTypeCode` is missing. |
+| `needs.classificationMapping` | `classificationCode` is missing. |
 
 ## Read next
 
 - [Item Classification Codes](/etims-item-classification-codes) — the full KRA classification list for `classificationCode`
 - [Codes & Values](/etims-codes) — tax, unit, packaging and payment codes
 - [Errors & Troubleshooting](/etims-errors) — what a rejected registration looks like coming back from KRA
-- [eTIMS Overview](/etims-overview) — how catalog registration fits the wider sync flow
+- [Items](/etims-guide-items) — create and register items step by step
