@@ -36,6 +36,8 @@ curl -X POST "$S2B_URL/sales" \
 | `lines[].itemId` | Yes | A **registered** item of this business. |
 | `lines[].quantity` | Yes | A number greater than 0. |
 | `lines[].unitPrice` | Yes | A number, 0 or more. The price the customer pays per unit, **tax included**. |
+| `lines[].discountAmount` | No | A number, 0 or more. The discount on the line in currency, **tax included**. Takes precedence over `discountRate`. It cannot exceed `quantity × unitPrice`. |
+| `lines[].discountRate` | No | A number from 0 to 100. The discount as a percentage of `quantity × unitPrice`. Send this or `discountAmount`. |
 | `lines[].description` | No | Up to 200 characters. |
 | `customer` | No | An object with `name` (up to 200), `pin` (up to 11), `phone` (up to 30) and `email` (up to 200), all optional. |
 | `paymentTypeCode` | No | Up to 2 characters. Defaults to `01` (cash). See [Codes & Values](/etims-codes#payment-type-sales). |
@@ -43,6 +45,13 @@ curl -X POST "$S2B_URL/sales" \
 | `callbackUrl` | No | Where to send the result. See [Result callbacks](/etims-callbacks). |
 
 The tax on each line comes from the item. See [Core concepts](/etims-concepts#tax-inclusive-pricing).
+
+### Discounts
+
+A line discount is taken off the line before tax is worked out. For `quantity: 2`, `unitPrice: 20880` and
+`discountRate: 10`, the discount is 4,176.00, the line total is 37,584.00, and the VAT is split out of that figure.
+Send either field; the other is worked out and both come back on each line of the sale. The receipt shows the
+discount under the line, with **Total before discount** and **Total discount awarded** above the sub total.
 
 ## Outcomes
 
