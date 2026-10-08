@@ -6,6 +6,11 @@ description: "Changes to the Compliance API's public /v1 surface and its documen
 Changes to the `/v1` endpoints, and to the way they are documented, are listed here. A change that could break an
 existing integration is marked **breaking**.
 
+<Update label="2026-10-08" description="Line discounts on sales">
+  `POST /v1/sales` accepts `lines[].discountRate` and `lines[].discountAmount`. Both are returned on each line of the
+  sale, `total` is the amount after the discount, and the receipt shows the discount. Existing requests are unaffected.
+</Update>
+
 <Update label="2026-10-03" description="Initial publication">
   The `/v1` surface is documented for the first time:
 
