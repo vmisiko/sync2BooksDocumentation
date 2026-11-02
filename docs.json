@@ -159,7 +159,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://sync2books.com/dashboard"
+      "href": "https://compliance-dashboard.apps.kintro.money/"
     }
   },
   "footer": {
